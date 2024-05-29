@@ -74,14 +74,52 @@ defmodule CurlReq do
       iex> ~CURL"curl https://www.google.com"
       %Req.Request{method: :get, url: %URI{scheme: "https", host: "www.google.com"}}
   """
-  defmacro sigil_CURL(command, extra) do
+  @command %{
+    arguments: [
+      %{name: :request, short: hd(~c"X"), long: ~c"request", default: "GET"},
+      %{name: :header, short: hd(~c"H"), long: ~c"header"}
+    ]
+  }
+  defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
+    req =
+      CurlReq.Macro.parse(command)
+      |> to_req()
+      |> Macro.escape()
+
+    # quote do
+    #   unquote(req)
+    # end
   end
 
-  @doc """
-  Formatting this will replace the curl command with the equivalent code to generate the Req request.
-
-  Simply trigger the formatter to be run, and your command will appear here. You will need to remove the ~CURL2REQ sigil yourself.
-  """
-  defmacro sigil_CURL2REQ(command, extra) do
+  def to_req(["curl" | rest]) do
+    to_req(rest, %Req.Request{})
   end
+
+  def to_req(["-H", header | rest], req) do
+    [key, value] = String.split(header, ":", parts: 2)
+    new_req = Req.Request.put_header(req, String.trim(key), String.trim(value))
+    to_req(rest, new_req)
+  end
+
+  def to_req(["-X", method | rest], req) do
+    new_req = Req.merge(req, method: method)
+    to_req(rest, new_req)
+  end
+
+  def to_req(["-d", body | rest], req) do
+    new_req = Req.merge(req, body: body)
+    to_req(rest, new_req)
+  end
+
+  def to_req([url | rest], req) do
+    new_req = Req.merge(req, url: url)
+    to_req(rest, new_req)
+  end
+
+  def to_req([unknown | rest], req) do
+    IO.inspect(unknown, label: "UNKNOWN OPTION, SKIPPING")
+    to_req(rest, req)
+  end
+
+  def to_req([], req), do: req
 end
