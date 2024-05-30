@@ -2,35 +2,37 @@
 
 <!-- MDOC !-->
 
-Req is awesome, but the rest of the world speaks Curl.
+Req is awesome, but the world speaks curl.
 
-CurlReq provides two features:
+Next time you're debugging a 3rd party API and need to ask for support, you can just toss in this line:
 
 ```elixir
-# Turn a Req request into a `curl` command!
+|> CurlReq.inspect()
+```
 
-## Examples
+And you'll have the full curl command.
 
-    iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
-    ...> |> CurlReq.to_curl()
-    "curl -H \"accept-encoding: gzip\" -H \"user-agent: req/0.4.14\" -X GET https://catfact.ninja/fact" 
+```elixir
+# Turn a Req request into a `curl` command.
 
-# Or use `CurlReq.inspect/2` to inspect inline!
+iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
+...> |> CurlReq.to_curl()
+"curl -H \"accept-encoding: gzip\" -H \"user-agent: req/0.4.14\" -X GET https://catfact.ninja/fact" 
 
-    iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
-    ...> |> CurlReq.inspect(label: "MY REQ")
-    ...> # |> Req.request!()
+# Or use `CurlReq.inspect/2` to inspect inline.
+
+iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
+...> |> CurlReq.inspect(label: "MY REQ")
+...> # |> Req.request!()
 
 ```
 
+`CurlReq` also implements the `~CURL` sigil, which converts a curl command to its corresponding Req request.
+
 ```elixir
-# Turn a CURL command into a Req request with the ~CURL sigil!
-
-## Examples
-
-    iex> import CurlReq
-    ...> ~CURL(curl https://www.google.com)
-    ...> # |> Req.request!()
+iex> import CurlReq
+...> ~CURL(curl https://www.google.com)
+...> # |> Req.request!()
 
 ```
 
@@ -48,3 +50,23 @@ end
 ```
 
 The docs can be found at <https://hexdocs.pm/curl_req>.
+
+## Contributions
+
+Contributions are welcome! There are gaps in the library, and this is open source, so let's work together to fill them!
+
+- [ ] ~CURL sigil handles newlines
+- [x] curl [url]
+- [x] curl -H
+- [x] curl -X
+- [x] curl -d
+- [ ] curl -b
+- [ ] curl long form options (--header, --body, etc)
+
+## How to contribute
+
+- Clone the repository to your computer.
+- Add to your mix.exs file in your project: `{:curl_req, path: "~/path/to/curl_req"}`.
+- Tinker until it does what you want.
+- Add a test covering your case.
+- Submit a PR!

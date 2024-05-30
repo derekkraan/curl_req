@@ -4,10 +4,14 @@ defmodule CurlReq.MixProject do
   def project do
     [
       app: :curl_req,
-      version: "0.98.0",
+      deps: deps(),
+      docs: docs(),
       elixir: "~> 1.15",
+      name: "CurlReq",
+      package: package(),
+      source_url: "https://github.com/derekkraan/curl_req",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      version: "0.98.0"
     ]
   end
 
@@ -23,6 +27,21 @@ defmodule CurlReq.MixProject do
     [
       {:req, "~> 0.4.0 or ~> 0.5.0"},
       {:ex_doc, ">= 0.0.0"}
+    ]
+  end
+
+  defp docs do
+    [main: "CurlReq", extras: extras()]
+  end
+
+  defp extras, do: []
+
+  defp package() do
+    [
+      description: "Req 💗 curl",
+      licenses: ["MIT"],
+      links: %{GitHub: "https://github.com/derekkraan/curl_req"},
+      maintainers: ["Derek Kraan"]
     ]
   end
 end
