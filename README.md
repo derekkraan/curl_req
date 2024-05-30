@@ -62,6 +62,7 @@ Contributions are welcome! There are gaps in the library, and this is open sourc
 - [x] curl -d
 - [ ] curl -b
 - [ ] curl long form options (--header, --body, etc)
+- [ ] Req Plugin to log curl command (like `TeslaCurl`)
 
 ## How to contribute
 
