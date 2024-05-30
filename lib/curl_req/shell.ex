@@ -1,6 +1,8 @@
 defmodule CurlReq.Shell do
   @moduledoc false
 
+  # https://www.baeldung.com/linux/bash-escape-characters
+
   @escaped [
     {"\\", ~S(\\)},
     {~S($), ~S(\$)},
