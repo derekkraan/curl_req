@@ -33,8 +33,11 @@ defmodule CurlReq do
   defp run_steps(req) do
     Enum.reduce(req.request_steps, req, fn {step_name, step}, req ->
       case step.(req) do
-        {_req, response_or_error} -> raise "The request was stopped by #{step_name} request_step."
-        next_req -> next_req
+        {_req, _response_or_error} ->
+          raise "The request was stopped by #{step_name} request_step."
+
+        next_req ->
+          next_req
       end
     end)
   end
@@ -74,21 +77,10 @@ defmodule CurlReq do
       iex> ~CURL"curl https://www.google.com"
       %Req.Request{method: :get, url: %URI{scheme: "https", host: "www.google.com"}}
   """
-  @command %{
-    arguments: [
-      %{name: :request, short: hd(~c"X"), long: ~c"request", default: "GET"},
-      %{name: :header, short: hd(~c"H"), long: ~c"header"}
-    ]
-  }
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
-    req =
-      CurlReq.Macro.parse(command)
-      |> to_req()
-      |> Macro.escape()
-
-    # quote do
-    #   unquote(req)
-    # end
+    CurlReq.Macro.parse(command)
+    |> to_req()
+    |> Macro.escape()
   end
 
   def to_req(["curl" | rest]) do
@@ -114,11 +106,6 @@ defmodule CurlReq do
   def to_req([url | rest], req) do
     new_req = Req.merge(req, url: url)
     to_req(rest, new_req)
-  end
-
-  def to_req([unknown | rest], req) do
-    IO.inspect(unknown, label: "UNKNOWN OPTION, SKIPPING")
-    to_req(rest, req)
   end
 
   def to_req([], req), do: req

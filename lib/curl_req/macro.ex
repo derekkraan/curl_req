@@ -44,7 +44,7 @@ defmodule CurlReq.Macro do
     do_parse(rest, state, [<<byte>> | acc])
   end
 
-  def do_parse("", state, acc) do
+  def do_parse("", _state, acc) do
     emit(acc, "")
   end
 
