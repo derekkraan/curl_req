@@ -4,7 +4,7 @@ defmodule CurlReq.MixProject do
   def project do
     [
       app: :curl_req,
-      version: "0.1.0",
+      version: "0.98.0",
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps()
@@ -21,7 +21,8 @@ defmodule CurlReq.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:req, "~> 0.4.0"}
+      {:req, "~> 0.4.0 or ~> 0.5.0"},
+      {:ex_doc, ">= 0.0.0"}
     ]
   end
 end

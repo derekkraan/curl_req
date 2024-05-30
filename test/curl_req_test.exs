@@ -1,6 +1,6 @@
 defmodule CurlReqTest do
   use ExUnit.Case
-  # doctest CurlReq
+  doctest CurlReq
   import CurlReq
 
   test "works with base URL" do

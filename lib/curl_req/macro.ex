@@ -1,4 +1,6 @@
 defmodule CurlReq.Macro do
+  @moduledoc false
+
   def parse(string, acc \\ []) do
     case do_parse(string) do
       {out, rest} -> parse(rest, [out | acc])
@@ -8,9 +10,14 @@ defmodule CurlReq.Macro do
 
   def do_parse(string, state \\ :nothing, accumulator \\ "")
 
+  #
+  # TODO handle newlines
+  #
   # def do_parse("\n" <> rest, state, acc) do
   #   do_parse(rest, state, acc)
   # end
+  #
+
   def do_parse(~S(") <> rest, :nothing, acc) do
     do_parse(rest, :double_quote, acc)
   end
@@ -60,4 +67,42 @@ defmodule CurlReq.Macro do
       {out, rest} -> {out, rest}
     end
   end
+
+  #
+  # TODO support -b (cookies)
+  #
+  # results in header `Cookie` with subsequent cookies separated by `; `
+  #
+
+  @doc false
+  def to_req(["curl" | rest]) do
+    to_req(rest, %Req.Request{})
+  end
+
+  @doc false
+  def to_req(["-H", header | rest], req) do
+    [key, value] = String.split(header, ":", parts: 2)
+    new_req = Req.Request.put_header(req, String.trim(key), String.trim(value))
+    to_req(rest, new_req)
+  end
+
+  def to_req(["-X", method | rest], req) do
+    new_req = Req.merge(req, method: method)
+    to_req(rest, new_req)
+  end
+
+  #
+  # TODO support multiple -d
+  #
+  def to_req(["-d", body | rest], req) do
+    new_req = Req.merge(req, body: body)
+    to_req(rest, new_req)
+  end
+
+  def to_req([url | rest], req) do
+    new_req = Req.merge(req, url: url)
+    to_req(rest, new_req)
+  end
+
+  def to_req([], req), do: req
 end

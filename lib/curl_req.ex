@@ -1,26 +1,25 @@
 defmodule CurlReq do
-  @moduledoc """
-  `CurlReq` bridges the gap between curl and Req.
+  @external_resource "README.md"
+  @moduledoc @external_resource
+             |> File.read!()
+             |> String.split("<!-- MDOC !-->")
+             |> Enum.fetch!(1)
 
-  Convert a curl command to a `%Req.Request{}` struct with `~CURL`
-
-  Convert a `%Req.Request{}` struct to a curl command with `to_curl/1`.
-  """
   @type inspect_opt :: {:label, String.t()}
+  @type req_request :: %Req.Request{}
 
   @doc """
-  Inspect a Req struct in CURL syntax.
+  Inspect a Req struct in curl syntax.
 
   Returns the unchanged `req`, just like `IO.inspect/2`.
 
   ## Examples
-
       iex> Req.new(url: URI.parse("https://www.google.com"))
-      ...> |> CurlReq.to_curl()
-      :world
+      ...> |> CurlReq.inspect()
+      ...> # |> Req.request!()
 
   """
-  @spec inspect(%Req.Request{}, [inspect_opt()]) :: %Req.Request{}
+  @spec inspect(req_request(), [inspect_opt()]) :: req_request()
   def inspect(req, opts \\ []) do
     case Keyword.get(opts, :label) do
       nil -> IO.puts(to_curl(req))
@@ -42,7 +41,17 @@ defmodule CurlReq do
     end)
   end
 
-  @spec to_curl(%Req.Request{}) :: String.t()
+  @doc """
+  Transforms a Req request into a curl command.
+
+  ## Examples
+
+      iex> Req.new(url: URI.parse("https://www.google.com"))
+      ...> |> CurlReq.to_curl()
+      ~S(curl -H "accept-encoding: gzip" -H "user-agent: req/0.4.14" -X GET https://www.google.com)
+
+  """
+  @spec to_curl(req_request()) :: String.t()
   def to_curl(req) do
     req = run_steps(req)
 
@@ -69,44 +78,18 @@ defmodule CurlReq do
   end
 
   @doc """
-  Transforms a CURL command to a %Req.Request{} struct.
+  Transforms a curl command into a Req request.
 
   ## Examples
 
       iex> import CurlReq
-      iex> ~CURL"curl https://www.google.com"
-      %Req.Request{method: :get, url: %URI{scheme: "https", host: "www.google.com"}}
+      ...> ~CURL(curl "https://www.google.com")
+      %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
   """
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
-    CurlReq.Macro.parse(command)
-    |> to_req()
+    command
+    |> CurlReq.Macro.parse()
+    |> CurlReq.Macro.to_req()
     |> Macro.escape()
   end
-
-  def to_req(["curl" | rest]) do
-    to_req(rest, %Req.Request{})
-  end
-
-  def to_req(["-H", header | rest], req) do
-    [key, value] = String.split(header, ":", parts: 2)
-    new_req = Req.Request.put_header(req, String.trim(key), String.trim(value))
-    to_req(rest, new_req)
-  end
-
-  def to_req(["-X", method | rest], req) do
-    new_req = Req.merge(req, method: method)
-    to_req(rest, new_req)
-  end
-
-  def to_req(["-d", body | rest], req) do
-    new_req = Req.merge(req, body: body)
-    to_req(rest, new_req)
-  end
-
-  def to_req([url | rest], req) do
-    new_req = Req.merge(req, url: url)
-    to_req(rest, new_req)
-  end
-
-  def to_req([], req), do: req
 end
