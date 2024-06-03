@@ -36,5 +36,13 @@ defmodule CurlReqTest do
                    "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"3544VE\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to Aureliahof16, Utrecht, The Netherlands.\"}}],\"formId\":4318}"
                }
     end
+
+    test "without curl prefix" do
+      assert ~CURL(http://localhost) ==
+               %Req.Request{
+                 method: :get,
+                 url: URI.parse("http://localhost")
+               }
+    end
   end
 end
