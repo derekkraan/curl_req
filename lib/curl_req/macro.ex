@@ -80,13 +80,13 @@ defmodule CurlReq.Macro do
   end
 
   @doc false
-  def to_req(["-H", header | rest], req) do
+  def to_req([option, header | rest], req) when option in ["-H", "--header"] do
     [key, value] = String.split(header, ":", parts: 2)
     new_req = Req.Request.put_header(req, String.trim(key), String.trim(value))
     to_req(rest, new_req)
   end
 
-  def to_req(["-X", method | rest], req) do
+  def to_req([option, method | rest], req) when option in ["-X", "--request"] do
     new_req = Req.merge(req, method: method)
     to_req(rest, new_req)
   end
@@ -94,7 +94,7 @@ defmodule CurlReq.Macro do
   #
   # TODO support multiple -d
   #
-  def to_req(["-d", body | rest], req) do
+  def to_req([option, body | rest], req) when option in ["-d", "--body"] do
     new_req = Req.merge(req, body: body)
     to_req(rest, new_req)
   end
