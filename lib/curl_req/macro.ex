@@ -15,8 +15,8 @@ defmodule CurlReq.Macro do
       command
       |> OptionParser.split()
       |> OptionParser.parse(
-        strict: [header: :keep, method: :string, body: :string],
-        aliases: [H: :header, X: :method, d: :body]
+        strict: [header: :keep, request: :string, body: :string],
+        aliases: [H: :header, X: :request, d: :body]
       )
 
     url = String.trim(url)
@@ -48,7 +48,7 @@ defmodule CurlReq.Macro do
   defp add_method(req, options) do
     method =
       options
-      |> Keyword.get(:method, "GET")
+      |> Keyword.get(:request, "GET")
       |> String.downcase()
       |> String.to_existing_atom()
 
