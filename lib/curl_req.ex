@@ -55,8 +55,16 @@ defmodule CurlReq do
   def to_curl(req) do
     req = run_steps(req)
 
+    cookies =
+      case Map.get(req.headers, "cookie") do
+        nil -> []
+        [cookies] -> ["-b", cookies]
+      end
+
     headers =
-      Enum.flat_map(req.headers, fn {key, value} ->
+      req.headers
+      |> Enum.reject(fn {key, _val} -> key == "cookie" end)
+      |> Enum.flat_map(fn {key, value} ->
         ["-H", "#{key}: #{value}"]
       end)
 
@@ -74,7 +82,7 @@ defmodule CurlReq do
 
     url = [to_string(req.url)]
 
-    CurlReq.Shell.cmd_to_string("curl", headers ++ body ++ method ++ url)
+    CurlReq.Shell.cmd_to_string("curl", headers ++ cookies ++ body ++ method ++ url)
   end
 
   @doc """
