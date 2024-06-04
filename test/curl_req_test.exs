@@ -44,5 +44,13 @@ defmodule CurlReqTest do
                  url: URI.parse("http://localhost")
                }
     end
+
+    test "multiple data flags" do
+      assert ~CURL(curl http://example.com -d name=foo -d mail=bar) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 body: "name=foo&mail=bar"
+               }
+    end
   end
 end
