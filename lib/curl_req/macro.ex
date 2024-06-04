@@ -3,7 +3,6 @@ defmodule CurlReq.Macro do
 
   # TODO: handle newlines
   # TODO: support -b (cookies)
-  # TODO: support multiple -d
 
   def parse(command) do
     command =
@@ -15,8 +14,8 @@ defmodule CurlReq.Macro do
       command
       |> OptionParser.split()
       |> OptionParser.parse(
-        strict: [header: :keep, request: :string, body: :string],
-        aliases: [H: :header, X: :request, d: :body]
+        strict: [header: :keep, request: :string, data: :keep],
+        aliases: [H: :header, X: :request, d: :data]
       )
 
     url = String.trim(url)
@@ -56,7 +55,12 @@ defmodule CurlReq.Macro do
   end
 
   defp add_body(req, options) do
-    body = Keyword.get(options, :body)
+    body =
+      case Keyword.get_values(options, :data) do
+        [] -> nil
+        data -> Enum.join(data, "&")
+      end
+
     Req.merge(req, body: body)
   end
 end
