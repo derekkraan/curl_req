@@ -36,6 +36,8 @@ iex> import CurlReq
 
 ```
 
+[Read the announcement here](https://codecodeship.com/blog/2024-06-03-curl_req).
+
 ## Installation
 
 The package can be installed
