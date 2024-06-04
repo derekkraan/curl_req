@@ -20,6 +20,7 @@ defmodule CurlReq.Shell do
   def cmd_to_string(cmd, args) do
     final_args =
       args
+      |> Enum.map(&IO.iodata_to_binary/1)
       |> Enum.map(&escape/1)
       |> Enum.join(" ")
 

@@ -19,6 +19,17 @@ defmodule CurlReqTest do
              |> CurlReq.to_curl() ==
                "curl #{default_header()} -b \"name1=value1\" -X GET http://example.com"
     end
+
+    test "works when body is iodata" do
+      assert "curl #{default_header()} -d hello -X POST https://catfact.ninja/fact" ==
+               Req.new(
+                 method: :post,
+                 url: "/fact",
+                 base_url: "https://catfact.ninja",
+                 body: ["h" | ["e" | ["llo"]]]
+               )
+               |> CurlReq.to_curl()
+    end
   end
 
   describe "macro" do
