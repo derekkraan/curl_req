@@ -22,7 +22,7 @@ defmodule CurlReqTest do
     end
 
     test "multiple headers with body" do
-      assert ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"3544VE\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to Aureliahof16, Utrecht, The Netherlands.\"}}],\"formId\":4318}" -X POST "https://130-RZU-897.mktorest.com/rest/v1/leads/submitForm.json") ==
+      assert ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}" -X POST "https://130-RZU-897.mktorest.com/rest/v1/leads/submitForm.json") ==
                %Req.Request{
                  method: :post,
                  url: URI.parse("https://130-RZU-897.mktorest.com/rest/v1/leads/submitForm.json"),
@@ -33,7 +33,7 @@ defmodule CurlReqTest do
                    "user-agent" => ["req/0.4.14"]
                  },
                  body:
-                   "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"3544VE\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to Aureliahof16, Utrecht, The Netherlands.\"}}],\"formId\":4318}"
+                   "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}"
                }
     end
 
