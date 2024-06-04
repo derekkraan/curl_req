@@ -52,5 +52,19 @@ defmodule CurlReqTest do
                  body: "name=foo&mail=bar"
                }
     end
+
+    test "cookie" do
+      assert ~CURL(http://example.com -b "name1=value1") ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"cookie" => ["name1=value1"]}
+               }
+
+      assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"cookie" => ["name1=value1; name2=value2"]}
+               }
+    end
   end
 end
