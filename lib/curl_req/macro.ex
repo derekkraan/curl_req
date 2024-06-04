@@ -1,108 +1,62 @@
 defmodule CurlReq.Macro do
   @moduledoc false
 
-  def parse(string, acc \\ []) do
-    case do_parse(string) do
-      {out, rest} -> parse(rest, [out | acc])
-      out -> [out | acc] |> Enum.filter(& &1) |> Enum.reverse()
-    end
-  end
+  # TODO: handle newlines
+  # TODO: support -b (cookies)
+  # TODO: support multiple -d
 
-  def do_parse(string, state \\ :nothing, accumulator \\ "")
+  def parse(command) do
+    command =
+      command
+      |> String.trim()
+      |> String.trim_leading("curl")
 
-  #
-  # TODO handle newlines
-  #
-  # def do_parse("\n" <> rest, state, acc) do
-  #   do_parse(rest, state, acc)
-  # end
-  #
+    {options, [url], _invalid} =
+      command
+      |> OptionParser.split()
+      |> OptionParser.parse(
+        strict: [header: :keep, request: :string, body: :string],
+        aliases: [H: :header, X: :request, d: :body]
+      )
 
-  def do_parse(~S(") <> rest, :nothing, acc) do
-    do_parse(rest, :double_quote, acc)
-  end
-
-  def do_parse(~S(") <> rest, :double_quote, acc) do
-    do_parse(rest, :nothing, acc)
-  end
-
-  def do_parse(~S(') <> rest, :nothing, acc) do
-    do_parse(rest, :single_quote, acc)
-  end
-
-  def do_parse(~S(') <> rest, :single_quote, acc) do
-    do_parse(rest, :nothing, acc)
-  end
-
-  def do_parse(<<"\\", escaped>> <> rest, state, acc) when state in [:double_quote, :nothing] do
-    do_parse(rest, state, [escaped | acc])
-  end
-
-  def do_parse(" " <> rest, :double_quote, acc) do
-    do_parse(rest, :double_quote, [" " | acc])
-  end
-
-  def do_parse(" " <> rest, :nothing, acc) do
-    emit(acc, rest)
-    # do_parse(rest, :nothing, "")
-  end
-
-  def do_parse(<<byte, rest::binary>>, state, acc) do
-    do_parse(rest, state, [<<byte>> | acc])
-  end
-
-  def do_parse("", _state, acc) do
-    emit(acc, "")
-  end
-
-  def emit(acc, rest) do
-    out =
-      IO.iodata_to_binary(acc)
-      |> String.reverse()
-
-    case {out, rest} do
-      {"", ""} -> nil
-      {"", rest} -> {nil, rest}
-      {out, ""} -> out
-      {out, rest} -> {out, rest}
-    end
-  end
-
-  #
-  # TODO support -b (cookies)
-  #
-  # results in header `Cookie` with subsequent cookies separated by `; `
-  #
-
-  @doc false
-  def to_req(["curl" | rest]) do
-    to_req(rest, %Req.Request{})
+    url = String.trim(url)
+    %{url: url, options: options}
   end
 
   @doc false
-  def to_req(["-H", header | rest], req) do
-    [key, value] = String.split(header, ":", parts: 2)
-    new_req = Req.Request.put_header(req, String.trim(key), String.trim(value))
-    to_req(rest, new_req)
+  def to_req(%{url: url, options: options}) do
+    %Req.Request{}
+    |> Req.merge(url: url)
+    |> add_header(options)
+    |> add_method(options)
+    |> add_body(options)
   end
 
-  def to_req(["-X", method | rest], req) do
-    new_req = Req.merge(req, method: method)
-    to_req(rest, new_req)
+  defp add_header(req, options) do
+    headers = Keyword.get_values(options, :header)
+
+    for header <- headers, reduce: req do
+      req ->
+        [key, value] =
+          header
+          |> String.split(":", parts: 2)
+
+        Req.Request.put_header(req, String.trim(key), String.trim(value))
+    end
   end
 
-  #
-  # TODO support multiple -d
-  #
-  def to_req(["-d", body | rest], req) do
-    new_req = Req.merge(req, body: body)
-    to_req(rest, new_req)
+  defp add_method(req, options) do
+    method =
+      options
+      |> Keyword.get(:request, "GET")
+      |> String.downcase()
+      |> String.to_existing_atom()
+
+    Req.merge(req, method: method)
   end
 
-  def to_req([url | rest], req) do
-    new_req = Req.merge(req, url: url)
-    to_req(rest, new_req)
+  defp add_body(req, options) do
+    body = Keyword.get(options, :body)
+    Req.merge(req, body: body)
   end
-
-  def to_req([], req), do: req
 end
