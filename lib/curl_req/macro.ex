@@ -13,8 +13,16 @@ defmodule CurlReq.Macro do
       command
       |> OptionParser.split()
       |> OptionParser.parse(
-        strict: [header: :keep, request: :string, data: :keep, cookie: :string],
-        aliases: [H: :header, X: :request, d: :data, b: :cookie]
+        strict: [
+          header: :keep,
+          request: :string,
+          data: :keep,
+          cookie: :string,
+          head: :boolean,
+          form: :keep,
+          location: :boolean
+        ],
+        aliases: [H: :header, X: :request, d: :data, b: :cookie, I: :head, F: :form, L: :location]
       )
 
     url = String.trim(url)
@@ -29,6 +37,8 @@ defmodule CurlReq.Macro do
     |> add_method(options)
     |> add_body(options)
     |> add_cookie(options)
+    |> add_form(options)
+    |> configure_redirects(options)
   end
 
   defp add_header(req, options) do
@@ -46,10 +56,14 @@ defmodule CurlReq.Macro do
 
   defp add_method(req, options) do
     method =
-      options
-      |> Keyword.get(:request, "GET")
-      |> String.downcase()
-      |> String.to_existing_atom()
+      if Keyword.get(options, :head, false) do
+        :head
+      else
+        options
+        |> Keyword.get(:request, "GET")
+        |> String.downcase()
+        |> String.to_existing_atom()
+      end
 
     Req.merge(req, method: method)
   end
@@ -68,6 +82,37 @@ defmodule CurlReq.Macro do
     case Keyword.get(options, :cookie) do
       nil -> req
       cookie -> Req.Request.put_header(req, "cookie", cookie)
+    end
+  end
+
+  defp add_form(req, options) do
+    case Keyword.get_values(options, :form) do
+      [] ->
+        req
+
+      formdata ->
+        form =
+          for fd <- formdata, reduce: %{} do
+            map ->
+              [key, value] = String.split(fd, "=", parts: 2)
+              Map.put(map, key, value)
+          end
+
+        req
+        |> Req.Request.register_options([:form])
+        |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
+        |> Req.merge(form: form)
+    end
+  end
+
+  defp configure_redirects(req, options) do
+    if Keyword.get(options, :location, false) do
+      req
+      |> Req.Request.register_options([:redirect])
+      |> Req.Request.prepend_response_steps(redirect: &Req.Steps.redirect/1)
+      |> Req.merge(redirect: true)
+    else
+      req
     end
   end
 end
