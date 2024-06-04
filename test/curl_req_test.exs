@@ -3,11 +3,21 @@ defmodule CurlReqTest do
   doctest CurlReq
   import CurlReq
 
+  @req_version :application.get_key(:req, :vsn) |> elem(1)
+
+  defp default_header(), do: "-H \"accept-encoding: gzip\" -H \"user-agent: req/#{@req_version}\""
+
   describe "to_curl" do
     test "works with base URL" do
-      assert "curl -H \"accept-encoding: gzip\" -H \"user-agent: req/0.4.14\" -X GET https://catfact.ninja/fact" ==
+      assert "curl #{default_header()} -X GET https://catfact.ninja/fact" ==
                Req.new(url: "/fact", base_url: "https://catfact.ninja/")
                |> CurlReq.to_curl()
+    end
+
+    test "cookies get extracted from header" do
+      assert Req.new(url: "http://example.com", headers: %{"cookie" => ["name1=value1"]})
+             |> CurlReq.to_curl() ==
+               "curl #{default_header()} -b \"name1=value1\" -X GET http://example.com"
     end
   end
 
@@ -50,6 +60,20 @@ defmodule CurlReqTest do
                %Req.Request{
                  url: URI.parse("http://example.com"),
                  body: "name=foo&mail=bar"
+               }
+    end
+
+    test "cookie" do
+      assert ~CURL(http://example.com -b "name1=value1") ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"cookie" => ["name1=value1"]}
+               }
+
+      assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"cookie" => ["name1=value1; name2=value2"]}
                }
     end
   end

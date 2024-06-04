@@ -2,7 +2,6 @@ defmodule CurlReq.Macro do
   @moduledoc false
 
   # TODO: handle newlines
-  # TODO: support -b (cookies)
 
   def parse(command) do
     command =
@@ -14,8 +13,8 @@ defmodule CurlReq.Macro do
       command
       |> OptionParser.split()
       |> OptionParser.parse(
-        strict: [header: :keep, request: :string, data: :keep],
-        aliases: [H: :header, X: :request, d: :data]
+        strict: [header: :keep, request: :string, data: :keep, cookie: :string],
+        aliases: [H: :header, X: :request, d: :data, b: :cookie]
       )
 
     url = String.trim(url)
@@ -29,6 +28,7 @@ defmodule CurlReq.Macro do
     |> add_header(options)
     |> add_method(options)
     |> add_body(options)
+    |> add_cookie(options)
   end
 
   defp add_header(req, options) do
@@ -62,5 +62,12 @@ defmodule CurlReq.Macro do
       end
 
     Req.merge(req, body: body)
+  end
+
+  defp add_cookie(req, options) do
+    case Keyword.get(options, :cookie) do
+      nil -> req
+      cookie -> Req.Request.put_header(req, "cookie", cookie)
+    end
   end
 end
