@@ -64,7 +64,7 @@ Contributions are welcome! There are gaps in the library, and this is open sourc
 - [x] curl -d
 - [x] curl -b
 - [x] curl long form options (--header, --data, etc)
-- [ ] Req Plugin to log curl command (like `TeslaCurl`)
+- [x] Req Plugin to log curl command (like `TeslaCurl`)
 
 ## How to contribute
 
@@ -72,4 +72,5 @@ Contributions are welcome! There are gaps in the library, and this is open sourc
 - Add to your mix.exs file in your project: `{:curl_req, path: "~/path/to/curl_req"}`.
 - Tinker until it does what you want.
 - Add a test covering your case.
+- Add a changelog entry if applicable.
 - Submit a PR!

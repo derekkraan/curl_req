@@ -52,8 +52,13 @@ defmodule CurlReq do
 
   """
   @spec to_curl(req_request()) :: String.t()
-  def to_curl(req) do
-    req = run_steps(req)
+  def to_curl(req, options \\ []) do
+    req =
+      if Keyword.get(options, :run_steps, true) do
+        run_steps(req)
+      else
+        req
+      end
 
     cookies =
       case Map.get(req.headers, "cookie") do

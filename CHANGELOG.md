@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.98.4
+- Add CurlReq.Plugin
+
 ## 0.98.3
 - Change `ex_doc` to a dev dependency.
 - Support iodata in Req.Request.body.
