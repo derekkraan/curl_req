@@ -116,6 +116,18 @@ defmodule CurlReqTest do
                }
     end
 
+    test "auth" do
+      assert ~CURL(curl http://example.com -u user:pass) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 body: nil,
+                 registered_options: MapSet.new([:auth]),
+                 options: %{auth: {:basic, "user:pass"}},
+                 current_request_steps: [:auth],
+                 request_steps: [auth: &Req.Steps.auth/1]
+               }
+    end
+
     test "redirects" do
       assert ~CURL(curl -L http://example.com) ==
                %Req.Request{

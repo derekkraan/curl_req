@@ -20,9 +20,19 @@ defmodule CurlReq.Macro do
           cookie: :string,
           head: :boolean,
           form: :keep,
-          location: :boolean
+          location: :boolean,
+          user: :string
         ],
-        aliases: [H: :header, X: :request, d: :data, b: :cookie, I: :head, F: :form, L: :location]
+        aliases: [
+          H: :header,
+          X: :request,
+          d: :data,
+          b: :cookie,
+          I: :head,
+          F: :form,
+          L: :location,
+          u: :user
+        ]
       )
 
     url = String.trim(url)
@@ -38,6 +48,7 @@ defmodule CurlReq.Macro do
     |> add_body(options)
     |> add_cookie(options)
     |> add_form(options)
+    |> add_auth(options)
     |> configure_redirects(options)
   end
 
@@ -102,6 +113,19 @@ defmodule CurlReq.Macro do
         |> Req.Request.register_options([:form])
         |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
         |> Req.merge(form: form)
+    end
+  end
+
+  defp add_auth(req, options) do
+    case Keyword.get(options, :user) do
+      nil ->
+        req
+
+      credentials ->
+        req
+        |> Req.Request.register_options([:auth])
+        |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+        |> Req.merge(auth: {:basic, credentials})
     end
   end
 
