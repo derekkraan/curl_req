@@ -11,7 +11,7 @@ defmodule CurlReq.MixProject do
       package: package(),
       source_url: "https://github.com/derekkraan/curl_req",
       start_permanent: Mix.env() == :prod,
-      version: "0.98.2"
+      version: "0.98.3"
     ]
   end
 
@@ -26,7 +26,7 @@ defmodule CurlReq.MixProject do
   defp deps do
     [
       {:req, "~> 0.4.0 or ~> 0.5.0"},
-      {:ex_doc, ">= 0.0.0"}
+      {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
 
