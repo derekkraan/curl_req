@@ -59,6 +59,11 @@ defmodule CurlReq do
         req
       end
 
+    auth =
+      case req.options do
+        %{auth: {:basic, credentials}} -> ["-u", credentials]
+        _ -> []
+      end
     cookies =
       case Map.get(req.headers, "cookie") do
         nil -> []
@@ -67,6 +72,7 @@ defmodule CurlReq do
 
     headers =
       req.headers
+      |> maybe_remove_auth_header(auth)
       |> Enum.reject(fn {key, _val} -> key == "cookie" end)
       |> Enum.flat_map(fn {key, value} ->
         ["-H", "#{key}: #{value}"]
@@ -78,16 +84,30 @@ defmodule CurlReq do
         body -> ["-d", body]
       end
 
+    redirect =
+      case req.options do
+        %{redirect: true} -> ["-L"]
+        _ -> []
+      end
     method =
       case req.method do
         nil -> ["-X", "GET"]
+        :head -> ["-I"]
         m -> ["-X", String.upcase(to_string(m))]
       end
 
     url = [to_string(req.url)]
 
-    CurlReq.Shell.cmd_to_string("curl", headers ++ cookies ++ body ++ method ++ url)
+    CurlReq.Shell.cmd_to_string(
+      "curl",
+      headers ++ cookies ++ body ++ method ++ redirect ++ auth ++ url
+    )
   end
+
+  defp maybe_remove_auth_header(headers, []), do: headers
+
+  defp maybe_remove_auth_header(headers, _),
+    do: Enum.reject(headers, fn {key, _val} -> key == "authorization" end)
 
   @doc """
   Transforms a curl command into a Req request.
