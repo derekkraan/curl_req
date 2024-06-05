@@ -12,6 +12,11 @@ Next time you're debugging a 3rd party API and need to ask for support, you can 
 
 And you'll have the full curl command.
 
+[Read the announcement here](https://codecodeship.com/blog/2024-06-03-curl_req).
+
+## Usage
+
+### Req to Curl
 ```elixir
 # Turn a Req request into a `curl` command.
 
@@ -27,6 +32,8 @@ iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
 
 ```
 
+### Curl to Req
+
 `CurlReq` also implements the `~CURL` sigil, which converts a curl command to its corresponding Req request.
 
 ```elixir
@@ -36,7 +43,16 @@ iex> import CurlReq
 
 ```
 
-[Read the announcement here](https://codecodeship.com/blog/2024-06-03-curl_req).
+### Req Plugin
+
+One final feature to note the Req plugin, `CurlReq.Plugin`. Use `CurlReq.Plugin.attach/2` to set up curl logging (inspired by `TeslaCurl`).
+
+```elixir
+iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
+...> |> CurlReq.Plugin.attach()
+...> # |> Req.request!()
+
+```
 
 ## Installation
 
