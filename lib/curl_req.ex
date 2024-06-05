@@ -121,7 +121,6 @@ defmodule CurlReq do
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
     command
     |> CurlReq.Macro.parse()
-    |> CurlReq.Macro.to_req()
     |> Macro.escape()
   end
 end

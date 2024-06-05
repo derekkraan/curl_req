@@ -3,6 +3,7 @@ defmodule CurlReq.Macro do
 
   # TODO: handle newlines
 
+  @spec parse(String.t()) :: Req.Request.t()
   def parse(command) do
     command =
       command
@@ -36,11 +37,7 @@ defmodule CurlReq.Macro do
       )
 
     url = String.trim(url)
-    %{url: url, options: options}
-  end
 
-  @doc false
-  def to_req(%{url: url, options: options}) do
     %Req.Request{}
     |> Req.merge(url: url)
     |> add_header(options)
