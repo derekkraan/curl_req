@@ -6,7 +6,6 @@ defmodule CurlReq do
              |> Enum.fetch!(1)
 
   @type inspect_opt :: {:label, String.t()}
-  @type req_request :: %Req.Request{}
 
   @doc """
   Inspect a Req struct in curl syntax.
@@ -19,7 +18,7 @@ defmodule CurlReq do
       ...> # |> Req.request!()
 
   """
-  @spec inspect(req_request(), [inspect_opt()]) :: req_request()
+  @spec inspect(Req.Request.t(), [inspect_opt()]) :: Req.Request.t()
   def inspect(req, opts \\ []) do
     case Keyword.get(opts, :label) do
       nil -> IO.puts(to_curl(req))
@@ -51,7 +50,7 @@ defmodule CurlReq do
       ~S(curl -H "accept-encoding: gzip" -H "user-agent: req/0.4.14" -X GET https://www.google.com)
 
   """
-  @spec to_curl(req_request()) :: String.t()
+  @spec to_curl(Req.Request.t(), Keyword.t()) :: String.t()
   def to_curl(req, options \\ []) do
     req =
       if Keyword.get(options, :run_steps, true) do
