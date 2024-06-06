@@ -6,7 +6,6 @@ defmodule CurlReq do
              |> Enum.fetch!(1)
 
   @type inspect_opt :: {:label, String.t()}
-  @type req_request :: %Req.Request{}
 
   @doc """
   Inspect a Req struct in curl syntax.
@@ -19,7 +18,7 @@ defmodule CurlReq do
       ...> # |> Req.request!()
 
   """
-  @spec inspect(req_request(), [inspect_opt()]) :: req_request()
+  @spec inspect(Req.Request.t(), [inspect_opt()]) :: Req.Request.t()
   def inspect(req, opts \\ []) do
     case Keyword.get(opts, :label) do
       nil -> IO.puts(to_curl(req))
@@ -44,6 +43,14 @@ defmodule CurlReq do
   @doc """
   Transforms a Req request into a curl command.
 
+  Supported curl flags are:
+
+  * `-b`
+  * `-H`
+  * `-X`
+  * `-I`
+  * `-d`
+
   ## Examples
 
       iex> Req.new(url: URI.parse("https://www.google.com"))
@@ -51,7 +58,7 @@ defmodule CurlReq do
       ~S(curl -H "accept-encoding: gzip" -H "user-agent: req/0.4.14" -X GET https://www.google.com)
 
   """
-  @spec to_curl(req_request()) :: String.t()
+  @spec to_curl(Req.Request.t(), Keyword.t()) :: String.t()
   def to_curl(req, options \\ []) do
     req =
       if Keyword.get(options, :run_steps, true) do
@@ -79,30 +86,92 @@ defmodule CurlReq do
         body -> ["-d", body]
       end
 
+    redirect =
+      case req.options do
+        %{redirect: true} -> ["-L"]
+        _ -> []
+      end
+
     method =
       case req.method do
         nil -> ["-X", "GET"]
+        :head -> ["-I"]
         m -> ["-X", String.upcase(to_string(m))]
       end
 
     url = [to_string(req.url)]
 
-    CurlReq.Shell.cmd_to_string("curl", headers ++ cookies ++ body ++ method ++ url)
+    CurlReq.Shell.cmd_to_string(
+      "curl",
+      headers ++ cookies ++ body ++ method ++ redirect ++ url
+    )
   end
 
   @doc """
   Transforms a curl command into a Req request.
+
+  Supported curl command line flags are supported:
+
+  * `-H`/`--header`
+  * `-X`/`--request`
+  * `-d`/`--data`
+  * `-b`/`--cookie`
+  * `-I`/`--head`
+  * `-F`/`--form`
+  * `-L`/`--location`
+  * `-u`/`--user`
+
+  The `curl` command prefix is optional
+
+  > #### Info {: .info}
+  >
+  > Only string inputs are supported. That means for example `-d @data.txt` will not load the file or `-d @-` will not read from stdin
+
+  ## Examples
+
+      iex> CurlReq.from_curl("curl https://www.google.com")
+      %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+
+      iex> ~S(curl -d "some data" https://example.com) |> CurlReq.from_curl()
+      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
+
+      iex> CurlReq.from_curl("curl -I https://example.com")
+      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+
+      iex> CurlReq.from_curl("curl -b cookie_key=cookie_val https://example.com")
+      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
+  """
+  @doc since: "0.98.4"
+
+  @spec from_curl(String.t()) :: Req.Request.t()
+  def from_curl(curl_command), do: CurlReq.Macro.parse(curl_command)
+
+  @doc """
+  Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string
 
   ## Examples
 
       iex> import CurlReq
       ...> ~CURL(curl "https://www.google.com")
       %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -d "some data" "https://example.com")
+      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -I "https://example.com")
+      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -b "cookie_key=cookie_val" "https://example.com")
+      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
   """
+  defmacro sigil_CURL(curl_command, modifiers)
+
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
     command
     |> CurlReq.Macro.parse()
-    |> CurlReq.Macro.to_req()
     |> Macro.escape()
   end
 end

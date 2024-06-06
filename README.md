@@ -54,6 +54,8 @@ iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
 
 ```
 
+<!-- MDOC !-->
+
 ## Installation
 
 The package can be installed
