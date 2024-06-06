@@ -2,6 +2,9 @@
 
 ## 0.98.4
 - Add CurlReq.Plugin
+- Add new supported flags: `--head`, `--form`, `--user` and `--location`
+- Add `CurlReq.from_curl/1`
+- Improved docs and added typespecs
 
 ## 0.98.3
 - Change `ex_doc` to a dev dependency.

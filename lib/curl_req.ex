@@ -145,6 +145,7 @@ defmodule CurlReq do
       iex> CurlReq.from_curl("curl -b cookie_key=cookie_val https://example.com")
       %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
   """
+  @doc since: "0.98.4"
 
   @spec from_curl(String.t()) :: Req.Request.t()
   def from_curl(curl_command), do: CurlReq.Macro.parse(curl_command)
