@@ -147,7 +147,7 @@ defmodule CurlReq do
   def from_curl(curl_command), do: CurlReq.Macro.parse(curl_command)
 
   @doc """
-  Same as `from_curl/1` but as a sigil. The benefit here is, that you don't need to escape the string
+  Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string
 
   ## Examples
 
