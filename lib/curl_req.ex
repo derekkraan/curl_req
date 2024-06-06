@@ -64,6 +64,7 @@ defmodule CurlReq do
         %{auth: {:basic, credentials}} -> ["-u", credentials]
         _ -> []
       end
+
     cookies =
       case Map.get(req.headers, "cookie") do
         nil -> []
@@ -89,6 +90,7 @@ defmodule CurlReq do
         %{redirect: true} -> ["-L"]
         _ -> []
       end
+
     method =
       case req.method do
         nil -> ["-X", "GET"]
@@ -112,12 +114,64 @@ defmodule CurlReq do
   @doc """
   Transforms a curl command into a Req request.
 
+  Supported curl command line flags are supported:
+
+  * `-H`/`--header`
+  * `-X`/`--request`
+  * `-d`/`--data`
+  * `-b`/`--cookie`
+  * `-I`/`--head`
+  * `-F`/`--form`
+  * `-L`/`--location`
+  * `-u`/`--user`
+
+  The `curl` command prefix is optional
+
+  > #### Info {: .info}
+  >
+  > Only string inputs are supported. That means for example `-d @data.txt` will not load the file or `-d @-` will not read from stdin
+
+  ## Examples
+
+      iex> CurlReq.from_curl("curl https://www.google.com")
+      %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+
+      iex> ~S(curl -d "some data" https://example.com) |> CurlReq.from_curl()
+      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
+
+      iex> CurlReq.from_curl("curl -I https://example.com")
+      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+
+      iex> CurlReq.from_curl("curl -b cookie_key=cookie_val https://example.com")
+      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
+  """
+
+  @spec from_curl(String.t()) :: Req.Request.t()
+  def from_curl(curl_command), do: CurlReq.Macro.parse(curl_command)
+
+  @doc """
+  Same as `from_curl/1` but as a sigil. The benefit here is, that you don't need to escape the string
+
   ## Examples
 
       iex> import CurlReq
       ...> ~CURL(curl "https://www.google.com")
       %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -d "some data" "https://example.com")
+      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -I "https://example.com")
+      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+
+      iex> import CurlReq
+      ...> ~CURL(curl -b "cookie_key=cookie_val" "https://example.com")
+      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
   """
+  defmacro sigil_CURL(curl_command, modifiers)
+
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
     command
     |> CurlReq.Macro.parse()
