@@ -26,12 +26,6 @@ defmodule CurlReqTest do
                "curl #{default_header()} -X GET -L http://example.com"
     end
 
-    test "auth flag gets set" do
-      assert Req.new(url: "http://example.com", auth: {:basic, "user:pass"})
-             |> CurlReq.to_curl() ==
-               "curl #{default_header()} -X GET -u user:pass http://example.com"
-    end
-
     test "head method flag gets set" do
       assert Req.new(url: "http://example.com", method: :head)
              |> CurlReq.to_curl() ==

@@ -43,6 +43,14 @@ defmodule CurlReq do
   @doc """
   Transforms a Req request into a curl command.
 
+  Supported curl flags are:
+
+  * `-b`
+  * `-H`
+  * `-X`
+  * `-I`
+  * `-d`
+
   ## Examples
 
       iex> Req.new(url: URI.parse("https://www.google.com"))
@@ -59,12 +67,6 @@ defmodule CurlReq do
         req
       end
 
-    auth =
-      case req.options do
-        %{auth: {:basic, credentials}} -> ["-u", credentials]
-        _ -> []
-      end
-
     cookies =
       case Map.get(req.headers, "cookie") do
         nil -> []
@@ -73,7 +75,6 @@ defmodule CurlReq do
 
     headers =
       req.headers
-      |> maybe_remove_auth_header(auth)
       |> Enum.reject(fn {key, _val} -> key == "cookie" end)
       |> Enum.flat_map(fn {key, value} ->
         ["-H", "#{key}: #{value}"]
@@ -102,14 +103,9 @@ defmodule CurlReq do
 
     CurlReq.Shell.cmd_to_string(
       "curl",
-      headers ++ cookies ++ body ++ method ++ redirect ++ auth ++ url
+      headers ++ cookies ++ body ++ method ++ redirect ++ url
     )
   end
-
-  defp maybe_remove_auth_header(headers, []), do: headers
-
-  defp maybe_remove_auth_header(headers, _),
-    do: Enum.reject(headers, fn {key, _val} -> key == "authorization" end)
 
   @doc """
   Transforms a curl command into a Req request.
