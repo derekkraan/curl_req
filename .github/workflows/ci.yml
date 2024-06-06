@@ -1,0 +1,28 @@
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        elixir-version: [1.16, 1.15]
+        otp-version: [26, 25, 24]
+
+    name: Tests
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir-version }}
+          otp-version: ${{ matrix.otp-version }}
+
+      - run: mix deps.get
+
+      - run: mix compile --warnings-as-errors
+        if: matrix.elixir-version == 1.16 && matrix.otp-version == 26
+
+      - run: mix format --check-formatted
+        if: matrix.elixir-version == 1.16 && matrix.otp-version == 26
+
+      - run: mix test
