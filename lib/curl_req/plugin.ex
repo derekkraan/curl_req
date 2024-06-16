@@ -31,7 +31,10 @@ defmodule CurlReq.Plugin do
     request
   end
 
+  @type option :: {:log_level, Logger.level()} | {:log_metadata, any()}
+
   @doc "Attaches the plugin, main entry point for this module."
+  @spec attach(Req.Request.t(), [option()]) :: Req.Request.t()
   def attach(%Req.Request{} = request, options \\ []) do
     request
     |> Req.Request.register_options([:log_level, :log_metadata])
