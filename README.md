@@ -75,7 +75,7 @@ The docs can be found at <https://hexdocs.pm/curl_req>.
 
 Contributions are welcome! There are gaps in the library, and this is open source, so let's work together to fill them!
 
-- [ ] ~CURL sigil handles newlines
+- [x] ~CURL sigil handles newlines
 - [x] curl [url]
 - [x] curl -H
 - [x] curl -X

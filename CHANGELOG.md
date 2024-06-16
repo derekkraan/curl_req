@@ -1,6 +1,7 @@
 # Changelog
 
 ## 0.98.5
+- Multiline Curl commands are now supported
 
 ## 0.98.4
 - Add CurlReq.Plugin

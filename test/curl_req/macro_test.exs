@@ -122,4 +122,39 @@ defmodule CurlReq.MacroTest do
                }
     end
   end
+
+  describe "newlines" do
+    test "sigil_CURL supports newlines" do
+      curl = ~CURL"""
+        curl -X POST \
+         --location \ 
+         https://example.com
+      """
+
+      assert curl == %Req.Request{
+               method: :post,
+               url: URI.parse("https://example.com"),
+               registered_options: MapSet.new([:redirect]),
+               options: %{redirect: true},
+               response_steps: [redirect: &Req.Steps.redirect/1]
+             }
+    end
+
+    test "from_curl supports newlines" do
+      curl =
+        from_curl("""
+          curl -X POST \
+           --location \ 
+           https://example.com
+        """)
+
+      assert curl == %Req.Request{
+               method: :post,
+               url: URI.parse("https://example.com"),
+               registered_options: MapSet.new([:redirect]),
+               options: %{redirect: true},
+               response_steps: [redirect: &Req.Steps.redirect/1]
+             }
+    end
+  end
 end
