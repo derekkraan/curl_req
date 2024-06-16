@@ -4,13 +4,13 @@ defmodule CurlReq.Plugin do
   @moduledoc """
   A collection of steps, usable with Req.
 
-  Example:
+  ## Examples
 
-  iex> Req.new(url: "https://catfact.ninja/fact")
-  ...> |>CurlReq.Plugin.attach()
+      iex> Req.new(url: "https://catfact.ninja/fact")
+      ...> |>CurlReq.Plugin.attach()
 
-  iex> Req.new(url: "https://catfact.ninja/fact")
-  ...> |> CurlReq.Plugin.attach(log_level: :info, log_metadata: [ansi_color: :blue])
+      iex> Req.new(url: "https://catfact.ninja/fact")
+      ...> |> CurlReq.Plugin.attach(log_level: :info, log_metadata: [ansi_color: :blue])
 
   # Possible improvements
 
