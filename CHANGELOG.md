@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.98.5
+
 ## 0.98.4
 - Add CurlReq.Plugin
 - Add new supported flags: `--head`, `--form`, `--user` and `--location`
