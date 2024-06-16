@@ -1,8 +1,6 @@
 defmodule CurlReq.Macro do
   @moduledoc false
 
-  # TODO: handle newlines
-
   @spec parse(String.t()) :: Req.Request.t()
   def parse(command) do
     command =
