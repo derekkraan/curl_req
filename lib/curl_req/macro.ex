@@ -10,7 +10,7 @@ defmodule CurlReq.Macro do
       |> String.trim()
       |> String.trim_leading("curl")
 
-    {options, [url], _invalid} =
+    {options, rest, _invalid} =
       command
       |> OptionParser.split()
       |> OptionParser.parse(
@@ -36,10 +36,19 @@ defmodule CurlReq.Macro do
         ]
       )
 
-    url = String.trim(url)
+    [url] =
+      rest
+      |> Enum.flat_map(fn part ->
+        case URI.new(part) do
+          {:ok, uri} -> [uri]
+          _ -> []
+        end
+      end)
 
     %Req.Request{}
-    |> Req.merge(url: url)
+    # Req would accept an URI struct but here we use to_string/1 because Req uses URI.parse/1 which sets the deprecated `authority` field which upsets the test assertions.
+    # Can be removed the Req uses URI.new/1
+    |> Req.merge(url: URI.to_string(url))
     |> add_header(options)
     |> add_method(options)
     |> add_body(options)
