@@ -64,8 +64,18 @@ defmodule CurlReq.Macro do
         [key, value] =
           header
           |> String.split(":", parts: 2)
+          |> Enum.map(&String.trim/1)
 
-        Req.Request.put_header(req, String.trim(key), String.trim(value))
+        case {String.downcase(key), value} do
+          {"authorization", "Bearer " <> token} ->
+            req
+            |> Req.Request.register_options([:auth])
+            |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+            |> Req.merge(auth: {:bearer, token})
+
+          _ ->
+            Req.Request.put_header(req, key, value)
+        end
     end
   end
 
