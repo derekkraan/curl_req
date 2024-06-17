@@ -2,6 +2,7 @@
 
 ## 0.98.5
 - Multiline Curl commands are now supported
+- `to_curl/2` now supports short and long argument flag generation
 
 ## 0.98.4
 - Add CurlReq.Plugin

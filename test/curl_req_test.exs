@@ -32,6 +32,17 @@ defmodule CurlReqTest do
                "curl #{default_header()} -I http://example.com"
     end
 
+    test "long flags" do
+      assert Req.new(
+               url: "http://example.com",
+               method: :head,
+               redirect: true,
+               headers: %{"cookie" => ["name1=value1"], "content-type" => ["application/json"]}
+             )
+             |> CurlReq.to_curl(flags: :long) ==
+               "curl --header \"accept-encoding: gzip\" --header \"content-type: application/json\" --header \"user-agent: req/#{@req_version}\" --cookie \"name1=value1\" --head --location http://example.com"
+    end
+
     test "formdata flags get set with correct headers and body" do
       assert Req.new(url: "http://example.com", form: [key1: "value1", key2: "value2"])
              |> CurlReq.to_curl() ==
