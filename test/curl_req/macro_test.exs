@@ -36,10 +36,13 @@ defmodule CurlReq.MacroTest do
                  url: URI.parse("https://example.com/rest/v1/leads/submitForm.json"),
                  headers: %{
                    "accept-encoding" => ["gzip"],
-                   "authorization" => ["Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon"],
                    "content-type" => ["application/json"],
                    "user-agent" => ["req/0.4.14"]
                  },
+                 registered_options: MapSet.new([:auth]),
+                 options: %{auth: {:bearer, "6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon"}},
+                 current_request_steps: [:auth],
+                 request_steps: [auth: &Req.Steps.auth/1],
                  body:
                    "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}"
                }
@@ -96,6 +99,31 @@ defmodule CurlReq.MacroTest do
                  options: %{auth: {:basic, "user:pass"}},
                  current_request_steps: [:auth],
                  request_steps: [auth: &Req.Steps.auth/1]
+               }
+    end
+
+    test "bearer token auth" do
+      curl = ~CURL"""
+        curl -L \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer <YOUR-TOKEN>" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        https://api.github.com/users
+      """
+
+      assert curl ==
+               %Req.Request{
+                 url: URI.parse("https://api.github.com/users"),
+                 body: nil,
+                 headers: %{
+                   "accept" => ["application/vnd.github+json"],
+                   "x-github-api-version" => ["2022-11-28"]
+                 },
+                 registered_options: MapSet.new([:auth, :redirect]),
+                 options: %{auth: {:bearer, "<YOUR-TOKEN>"}, redirect: true},
+                 current_request_steps: [:auth],
+                 request_steps: [auth: &Req.Steps.auth/1],
+                 response_steps: [redirect: &Req.Steps.redirect/1]
                }
     end
 
