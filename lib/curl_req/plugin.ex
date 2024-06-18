@@ -4,6 +4,10 @@ defmodule CurlReq.Plugin do
   @moduledoc """
   A collection of steps, usable with Req.
 
+  > #### Info {: .info}
+  >
+  > This plugin needs to be added behind any other Req.Steps. Steps add headers and change the request, and this all has to be done _before_ converting the request to a curl command.
+
   ## Examples
 
       iex> Req.new(url: "https://catfact.ninja/fact")

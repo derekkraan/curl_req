@@ -54,7 +54,7 @@ defmodule CurlReq do
 
   Options:
 
-  - `run_steps`: Run the Req.Steps before generation the arguments. Default: `true`
+  - `run_steps`: Run the Req.Steps before generating the curl command. Default: `true`. This option is semi-private, introduced to support CurlReq.Plugin.
   - `flags`: Specify the style the argument flags are constructed. Can either be `:short` or `:long`, Default: `:short`
 
   ## Examples
