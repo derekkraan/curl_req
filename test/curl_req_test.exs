@@ -67,5 +67,11 @@ defmodule CurlReqTest do
                Req.new(url: "https://example.com")
                |> CurlReq.to_curl(mode: :req)
     end
+
+    test "basic auth option" do
+      assert "curl --compressed -u user:pass --basic -X GET https://example.com" ==
+               Req.new(url: "https://example.com", auth: {:basic, "user:pass"})
+               |> CurlReq.to_curl()
+    end
   end
 end

@@ -109,10 +109,18 @@ defmodule CurlReq do
 
     options =
       case req.options do
-        %{redirect: true} -> [location_flag(flag_style)]
+        %{redirect: true} ->
+          [location_flag(flag_style)]
+
         # avoids duplicate compression argument
-        %{compressed: true} -> if run_steps?, do: [], else: [compressed_flag(flag_style)]
-        _ -> []
+        %{compressed: true} ->
+          if run_steps?, do: [], else: [compressed_flag()]
+
+        %{auth: {:basic, credentials}} ->
+          [user_flag(flag_style), credentials] ++ [basic_auth_flag()]
+
+        _ ->
+          []
       end
 
     method =
@@ -132,11 +140,16 @@ defmodule CurlReq do
 
   @typep header :: {String.t(), list(String.t())}
   @spec map_header(header(), flags(), mode()) :: list()
-  defp map_header({"accept-encoding", [compression]}, flag_style, :curl)
+  defp map_header({"accept-encoding", [compression]}, _flag_style, :curl)
        when compression in ["gzip", "br", "zstd"] do
-    [compressed_flag(flag_style)]
+    [compressed_flag()]
   end
 
+  # filter out basic auth header because we expect it to be set as an auth step option
+  defp map_header({"authorization", ["Basic " <> _credentials]}, _flag_style, :curl),
+    do: []
+
+  # filter out user agent when mode is :curl
   defp map_header({"user-agent", ["req/" <> _]}, _, :curl), do: []
 
   defp map_header({key, value}, flag_style, _),
@@ -160,7 +173,12 @@ defmodule CurlReq do
   defp location_flag(:short), do: "-L"
   defp location_flag(:long), do: "--location"
 
-  defp compressed_flag(_), do: "--compressed"
+  defp user_flag(:short), do: "-u"
+  defp user_flag(:long), do: "--user"
+
+  defp basic_auth_flag(), do: "--basic"
+
+  defp compressed_flag(), do: "--compressed"
 
   @doc """
   Transforms a curl command into a Req request.
