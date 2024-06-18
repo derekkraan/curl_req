@@ -45,11 +45,17 @@ defmodule CurlReq do
 
   Supported curl flags are:
 
-  * `-b`
-  * `-H`
-  * `-X`
-  * `-I`
-  * `-d`
+  * `-b`/`--cookie`
+  * `-H`/`--header`
+  * `-X`/`--request`
+  * `-L`/`--location`
+  * `-I`/`--head`
+  * `-d`/`--data`
+
+  Options:
+
+  - `run_steps`: Run the Req.Steps before generation the arguments. Default: `true`
+  - `flags`: Specify the style the argument flags are constructed. Can either be `:short` or `:long`, Default: `:short`
 
   ## Examples
 
@@ -57,9 +63,15 @@ defmodule CurlReq do
       ...> |> CurlReq.to_curl()
       ~S(curl -H "accept-encoding: gzip" -H "user-agent: req/0.4.14" -X GET https://www.google.com)
 
+      iex> Req.new(url: URI.parse("https://www.google.com"))
+      ...> |> CurlReq.to_curl(flags: :long)
+      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/0.4.14" --request GET https://www.google.com)
+
   """
   @spec to_curl(Req.Request.t(), Keyword.t()) :: String.t()
   def to_curl(req, options \\ []) do
+    flag_style = Keyword.get(options, :flags, :short)
+
     req =
       if Keyword.get(options, :run_steps, true) do
         run_steps(req)
@@ -70,33 +82,33 @@ defmodule CurlReq do
     cookies =
       case Map.get(req.headers, "cookie") do
         nil -> []
-        [cookies] -> ["-b", cookies]
+        [cookies] -> [cookie_flag(flag_style), cookies]
       end
 
     headers =
       req.headers
       |> Enum.reject(fn {key, _val} -> key == "cookie" end)
       |> Enum.flat_map(fn {key, value} ->
-        ["-H", "#{key}: #{value}"]
+        [header_flag(flag_style), "#{key}: #{value}"]
       end)
 
     body =
       case req.body do
         nil -> []
-        body -> ["-d", body]
+        body -> [data_flag(flag_style), body]
       end
 
     redirect =
       case req.options do
-        %{redirect: true} -> ["-L"]
+        %{redirect: true} -> [location_flag(flag_style)]
         _ -> []
       end
 
     method =
       case req.method do
-        nil -> ["-X", "GET"]
-        :head -> ["-I"]
-        m -> ["-X", String.upcase(to_string(m))]
+        nil -> [request_flag(flag_style), "GET"]
+        :head -> [head_flag(flag_style)]
+        m -> [request_flag(flag_style), String.upcase(to_string(m))]
       end
 
     url = [to_string(req.url)]
@@ -106,6 +118,24 @@ defmodule CurlReq do
       headers ++ cookies ++ body ++ method ++ redirect ++ url
     )
   end
+
+  defp cookie_flag(:short), do: "-b"
+  defp cookie_flag(:long), do: "--cookie"
+
+  defp header_flag(:short), do: "-H"
+  defp header_flag(:long), do: "--header"
+
+  defp data_flag(:short), do: "-d"
+  defp data_flag(:long), do: "--data"
+
+  defp head_flag(:short), do: "-I"
+  defp head_flag(:long), do: "--head"
+
+  defp request_flag(:short), do: "-X"
+  defp request_flag(:long), do: "--request"
+
+  defp location_flag(:short), do: "-L"
+  defp location_flag(:long), do: "--location"
 
   @doc """
   Transforms a curl command into a Req request.
