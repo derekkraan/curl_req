@@ -69,7 +69,9 @@ defmodule CurlReq do
       ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{:application.get_key(:req, :vsn) |> elem(1)}" --request GET https://www.google.com)
 
   """
-  @type to_curl_opts :: [flags: :short | :long, mode: :curl | :req, run_steps: boolean()]
+  @type flags :: :short | :long
+  @type mode :: :curl | :req
+  @type to_curl_opts :: [flags: flags(), mode: mode(), run_steps: boolean()]
   @spec to_curl(Req.Request.t(), to_curl_opts()) :: String.t()
   def to_curl(req, options \\ []) do
     flag_style = Keyword.get(options, :flags, :short)
@@ -123,6 +125,8 @@ defmodule CurlReq do
     )
   end
 
+  @typep header :: {String.t(), list(String.t())}
+  @spec map_header(header(), flags(), mode()) :: list()
   defp map_header({"accept-encoding", [compression]}, flag_style, :curl)
        when compression in ["gzip", "br", "zstd"] do
     [compressed_flag(flag_style)]
