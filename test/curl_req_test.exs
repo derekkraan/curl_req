@@ -3,8 +3,6 @@ defmodule CurlReqTest do
   doctest CurlReq
   import CurlReq
 
-  @req_version :application.get_key(:req, :vsn) |> elem(1)
-
   describe "to_curl" do
     test "works with base URL" do
       assert "curl --compressed -X GET https://catfact.ninja/fact" ==
@@ -65,7 +63,7 @@ defmodule CurlReqTest do
     end
 
     test "req mode with explicit headers" do
-      assert "curl -H \"accept-encoding: gzip\" -H \"user-agent: req/#{@req_version}\" -X GET https://example.com" ==
+      assert "curl -H \"accept-encoding: gzip\" -H \"user-agent: req/#{req_version()}\" -X GET https://example.com" ==
                Req.new(url: "https://example.com")
                |> CurlReq.to_curl(mode: :req)
     end

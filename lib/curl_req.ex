@@ -5,6 +5,11 @@ defmodule CurlReq do
              |> String.split("<!-- MDOC !-->")
              |> Enum.fetch!(1)
 
+  @req_version :application.get_key(:req, :vsn) |> elem(1)
+
+  @doc false
+  def req_version(), do: @req_version
+
   @type inspect_opt :: {:label, String.t()}
 
   @doc """
@@ -66,7 +71,7 @@ defmodule CurlReq do
 
       iex> Req.new(url: URI.parse("https://www.google.com"))
       ...> |> CurlReq.to_curl(flags: :long, mode: :req)
-      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{:application.get_key(:req, :vsn) |> elem(1)}" --request GET https://www.google.com)
+      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.google.com)
 
   """
   @type flags :: :short | :long
