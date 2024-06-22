@@ -28,8 +28,24 @@ defmodule CurlReq do
     req
   end
 
-  defp run_steps(req) do
-    Enum.reduce(req.request_steps, req, fn {step_name, step}, req ->
+  defp run_steps(req, option) do
+    req.request_steps
+    |> Enum.filter(fn {step_name, _} ->
+      case option do
+        _ when is_boolean(option) ->
+          option
+
+        [{:except, excludes}] ->
+          step_name not in excludes
+
+        [{:only, includes}] ->
+          step_name in includes
+
+        _ ->
+          {:error, "Invalid option #{Kernel.inspect(option)} in `run_step`"}
+      end
+    end)
+    |> Enum.reduce(req, fn {step_name, step}, req ->
       case step.(req) do
         {_req, _response_or_error} ->
           raise "The request was stopped by #{step_name} request_step."
@@ -51,6 +67,9 @@ defmodule CurlReq do
   * `-L`/`--location`
   * `-I`/`--head`
   * `-d`/`--data`
+  * `-u`/`--user`
+  * `-n`/`--netrc`
+  * `--netrc-file`
 
   Options:
 
@@ -70,14 +89,11 @@ defmodule CurlReq do
   """
   @spec to_curl(Req.Request.t(), Keyword.t()) :: String.t()
   def to_curl(req, options \\ []) do
-    flag_style = Keyword.get(options, :flags, :short)
+    opts = Keyword.validate!(options, flags: :short, run_steps: true)
+    flag_style = opts[:flags]
+    run_steps = opts[:run_steps]
 
-    req =
-      if Keyword.get(options, :run_steps, true) do
-        run_steps(req)
-      else
-        req
-      end
+    req = run_steps(req, run_steps)
 
     cookies =
       case Map.get(req.headers, "cookie") do
@@ -88,8 +104,9 @@ defmodule CurlReq do
     headers =
       req.headers
       |> Enum.reject(fn {key, _val} -> key == "cookie" end)
-      |> Enum.flat_map(fn {key, value} ->
-        [header_flag(flag_style), "#{key}: #{value}"]
+      |> Enum.flat_map(fn
+        {key, value} ->
+          [header_flag(flag_style), "#{key}: #{value}"]
       end)
 
     body =
@@ -104,6 +121,32 @@ defmodule CurlReq do
         _ -> []
       end
 
+    auth =
+      with {%{auth: scheme}} <- req.options do
+        case scheme do
+          {:bearer, value} ->
+            [
+              header_flag(flag_style),
+              "authorization: Bearer #{value}"
+            ]
+
+          {:basic, value} ->
+            [user_flag(flag_style), value]
+
+          :netrc ->
+            [netrc_flag(flag_style)]
+
+          {:netrc, filepath} ->
+            [netrc_file_flag(flag_style), filepath]
+
+          _ ->
+            []
+        end
+      else
+        _ ->
+          []
+      end
+
     method =
       case req.method do
         nil -> [request_flag(flag_style), "GET"]
@@ -115,7 +158,7 @@ defmodule CurlReq do
 
     CurlReq.Shell.cmd_to_string(
       "curl",
-      headers ++ cookies ++ body ++ method ++ redirect ++ url
+      auth ++ headers ++ cookies ++ body ++ method ++ redirect ++ url
     )
   end
 
@@ -136,6 +179,14 @@ defmodule CurlReq do
 
   defp location_flag(:short), do: "-L"
   defp location_flag(:long), do: "--location"
+
+  defp user_flag(:short), do: "-u"
+  defp user_flag(:long), do: "--user"
+
+  defp netrc_flag(:short), do: "-n"
+  defp netrc_flag(:long), do: "--netrc"
+
+  defp netrc_file_flag(_), do: "--netrc-file"
 
   @doc """
   Transforms a curl command into a Req request.
