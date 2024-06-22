@@ -138,9 +138,6 @@ defmodule CurlReq do
 
           {:netrc, filepath} ->
             [netrc_file_flag(flag_style), filepath]
-
-          _ ->
-            []
         end
       else
         _ ->
