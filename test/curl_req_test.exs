@@ -62,10 +62,10 @@ defmodule CurlReqTest do
                |> CurlReq.to_curl()
     end
 
-    test "req mode with explicit headers" do
+    test "req flavor with explicit headers" do
       assert "curl -H \"accept-encoding: gzip\" -H \"user-agent: req/#{req_version()}\" -X GET https://example.com" ==
                Req.new(url: "https://example.com")
-               |> CurlReq.to_curl(mode: :req)
+               |> CurlReq.to_curl(flavor: :req)
     end
 
     test "basic auth option" do
