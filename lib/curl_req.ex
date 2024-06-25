@@ -199,6 +199,7 @@ defmodule CurlReq do
   * `-F`/`--form`
   * `-L`/`--location`
   * `-u`/`--user`
+  * `--compressed`
 
   The `curl` command prefix is optional
 
