@@ -3,7 +3,8 @@
 ## 0.98.5
 - Multiline Curl commands are now supported
 - `to_curl/2` now supports short and long argument flag generation
-- `to_curl/2` now uses native curl compression mechanics by default. Can be switched to be exactly like the `Req.Request` with the `mode` option
+- `to_curl/2` now uses a native curl representation. Can be switched to be exactly like the `Req.Request` with the `flavor` option
+- `from_curl/1` now supports the `--compressed` flag
 
 ## 0.98.4
 - Add CurlReq.Plugin
