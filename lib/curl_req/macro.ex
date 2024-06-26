@@ -20,7 +20,8 @@ defmodule CurlReq.Macro do
           head: :boolean,
           form: :keep,
           location: :boolean,
-          user: :string
+          user: :string,
+          compressed: :boolean
         ],
         aliases: [
           H: :header,
@@ -53,6 +54,7 @@ defmodule CurlReq.Macro do
     |> add_cookie(options)
     |> add_form(options)
     |> add_auth(options)
+    |> add_compression(options)
     |> configure_redirects(options)
   end
 
@@ -140,6 +142,19 @@ defmodule CurlReq.Macro do
         |> Req.Request.register_options([:auth])
         |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
         |> Req.merge(auth: {:basic, credentials})
+    end
+  end
+
+  defp add_compression(req, options) do
+    case Keyword.get(options, :compressed) do
+      nil ->
+        req
+
+      bool ->
+        req
+        |> Req.Request.register_options([:compressed])
+        |> Req.Request.prepend_request_steps(compressed: &Req.Steps.compressed/1)
+        |> Req.merge(compressed: bool)
     end
   end
 

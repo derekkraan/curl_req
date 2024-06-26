@@ -5,6 +5,11 @@ defmodule CurlReq do
              |> String.split("<!-- MDOC !-->")
              |> Enum.fetch!(1)
 
+  @req_version :application.get_key(:req, :vsn) |> elem(1)
+
+  @doc false
+  def req_version(), do: @req_version
+
   @type inspect_opt :: {:label, String.t()}
 
   @doc """
@@ -56,24 +61,36 @@ defmodule CurlReq do
 
   - `run_steps`: Run the Req.Steps before generating the curl command. Default: `true`. This option is semi-private, introduced to support CurlReq.Plugin.
   - `flags`: Specify the style the argument flags are constructed. Can either be `:short` or `:long`, Default: `:short`
+  - `flavor` or `flavour`: With the `:curl` flavor (the default) it will try to use native curl representations for compression, auth and will use the native user agent. 
+  If flavor is set to `:req` the headers will not be modified and the curl command is contructed to stay as true as possible to the original `Req.Request`
 
   ## Examples
 
       iex> Req.new(url: URI.parse("https://www.google.com"))
       ...> |> CurlReq.to_curl()
-      ~S(curl -H "accept-encoding: gzip" -H "user-agent: req/0.4.14" -X GET https://www.google.com)
+      ~S(curl --compressed -X GET https://www.google.com)
 
       iex> Req.new(url: URI.parse("https://www.google.com"))
-      ...> |> CurlReq.to_curl(flags: :long)
-      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/0.4.14" --request GET https://www.google.com)
+      ...> |> CurlReq.to_curl(flags: :long, flavor: :req)
+      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.google.com)
 
   """
-  @spec to_curl(Req.Request.t(), Keyword.t()) :: String.t()
+  @type flags :: :short | :long
+  @type flavor :: :curl | :req
+  @type to_curl_opts :: [
+          flags: flags(),
+          flavor: flavor(),
+          flavour: flavor(),
+          run_steps: boolean()
+        ]
+  @spec to_curl(Req.Request.t(), to_curl_opts()) :: String.t()
   def to_curl(req, options \\ []) do
     flag_style = Keyword.get(options, :flags, :short)
+    flavor = Keyword.get(options, :flavor, nil) || Keyword.get(options, :flavour, :curl)
+    run_steps? = Keyword.get(options, :run_steps, true)
 
     req =
-      if Keyword.get(options, :run_steps, true) do
+      if run_steps? do
         run_steps(req)
       else
         req
@@ -88,9 +105,7 @@ defmodule CurlReq do
     headers =
       req.headers
       |> Enum.reject(fn {key, _val} -> key == "cookie" end)
-      |> Enum.flat_map(fn {key, value} ->
-        [header_flag(flag_style), "#{key}: #{value}"]
-      end)
+      |> Enum.flat_map(&map_header(&1, flag_style, flavor))
 
     body =
       case req.body do
@@ -98,10 +113,20 @@ defmodule CurlReq do
         body -> [data_flag(flag_style), body]
       end
 
-    redirect =
+    options =
       case req.options do
-        %{redirect: true} -> [location_flag(flag_style)]
-        _ -> []
+        %{redirect: true} ->
+          [location_flag(flag_style)]
+
+        # avoids duplicate compression argument
+        %{compressed: true} ->
+          if run_steps?, do: [], else: [compressed_flag()]
+
+        %{auth: {:basic, credentials}} ->
+          [user_flag(flag_style), credentials] ++ [basic_auth_flag()]
+
+        _ ->
+          []
       end
 
     method =
@@ -115,9 +140,26 @@ defmodule CurlReq do
 
     CurlReq.Shell.cmd_to_string(
       "curl",
-      headers ++ cookies ++ body ++ method ++ redirect ++ url
+      headers ++ cookies ++ body ++ options ++ method ++ url
     )
   end
+
+  @typep header :: {String.t(), list(String.t())}
+  @spec map_header(header(), flags(), flavor()) :: list()
+  defp map_header({"accept-encoding", [compression]}, _flag_style, :curl)
+       when compression in ["gzip", "br", "zstd"] do
+    [compressed_flag()]
+  end
+
+  # filter out basic auth header because we expect it to be set as an auth step option
+  defp map_header({"authorization", ["Basic " <> _credentials]}, _flag_style, :curl),
+    do: []
+
+  # filter out user agent when mode is :curl
+  defp map_header({"user-agent", ["req/" <> _]}, _, :curl), do: []
+
+  defp map_header({key, value}, flag_style, _),
+    do: [header_flag(flag_style), "#{key}: #{value}"]
 
   defp cookie_flag(:short), do: "-b"
   defp cookie_flag(:long), do: "--cookie"
@@ -137,6 +179,13 @@ defmodule CurlReq do
   defp location_flag(:short), do: "-L"
   defp location_flag(:long), do: "--location"
 
+  defp user_flag(:short), do: "-u"
+  defp user_flag(:long), do: "--user"
+
+  defp basic_auth_flag(), do: "--basic"
+
+  defp compressed_flag(), do: "--compressed"
+
   @doc """
   Transforms a curl command into a Req request.
 
@@ -150,6 +199,7 @@ defmodule CurlReq do
   * `-F`/`--form`
   * `-L`/`--location`
   * `-u`/`--user`
+  * `--compressed`
 
   The `curl` command prefix is optional
 

@@ -127,6 +127,18 @@ defmodule CurlReq.MacroTest do
                }
     end
 
+    test "compressed" do
+      assert ~CURL(curl --compressed http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 body: nil,
+                 registered_options: MapSet.new([:compressed]),
+                 options: %{compressed: true},
+                 current_request_steps: [:compressed],
+                 request_steps: [compressed: &Req.Steps.compressed/1]
+               }
+    end
+
     test "redirect" do
       assert ~CURL(curl -L http://example.com) ==
                %Req.Request{

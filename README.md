@@ -22,7 +22,7 @@ And you'll have the full curl command.
 
 iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
 ...> |> CurlReq.to_curl()
-"curl -H \"accept-encoding: gzip\" -H \"user-agent: req/0.4.14\" -X GET https://catfact.ninja/fact" 
+"curl --compressed -X GET https://catfact.ninja/fact" 
 
 # Or use `CurlReq.inspect/2` to inspect inline.
 
