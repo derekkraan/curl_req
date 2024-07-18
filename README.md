@@ -43,6 +43,14 @@ iex> import CurlReq
 
 ```
 
+or use `CurlReq.from_curl/1`:
+```elixir
+iex> CurlReq.from_curl("curl https://www.google.com")
+...> # |> Req.request!()
+
+```
+
+
 ### Req Plugin
 
 One final feature to note the Req plugin, `CurlReq.Plugin`. Use `CurlReq.Plugin.attach/2` to set up curl logging (inspired by `TeslaCurl`).
