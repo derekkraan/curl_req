@@ -7,6 +7,8 @@ defmodule CurlReq.Macro do
       command
       |> String.trim()
       |> String.trim_leading("curl")
+      |> String.replace("\\\n", " ")
+      |> String.replace("\n", " ")
 
     {options, rest, _invalid} =
       command

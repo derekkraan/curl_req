@@ -196,5 +196,55 @@ defmodule CurlReq.MacroTest do
                response_steps: [redirect: &Req.Steps.redirect/1]
              }
     end
+
+    test "accepts newlines ending in backslash" do
+      uri = URI.parse("https://hello.myshopify.com/api/2024-07/graphql.json")
+
+      assert %Req.Request{
+               method: :post,
+               url: ^uri,
+               headers: %{"content-type" => ["application/json"]}
+             } = ~CURL"""
+                 curl -X POST \
+                   https://hello.myshopify.com/api/2024-07/graphql.json \
+                   -H 'Content-Type: application/json' \
+                   -H 'X-Shopify-Storefront-Access-Token: ABCDEF' \
+                   -d '{
+                     "query": "{
+                       products(first: 3) {
+                         edges {
+                           node {
+                             id
+                             title
+                           }
+                         }
+                       }
+                     }"
+                   }'
+             """
+
+      assert %Req.Request{
+               method: :post,
+               url: ^uri,
+               headers: %{"content-type" => ["application/json"]}
+             } = ~CURL"""
+                 curl -X POST
+                   https://hello.myshopify.com/api/2024-07/graphql.json
+                   -H 'Content-Type: application/json'
+                   -H 'X-Shopify-Storefront-Access-Token: ABCDEF'
+                   -d '{
+                     "query": "{
+                       products(first: 3) {
+                         edges {
+                           node {
+                             id
+                             title
+                           }
+                         }
+                       }
+                     }"
+                   }'
+             """
+    end
   end
 end
