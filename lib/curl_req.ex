@@ -62,7 +62,7 @@ defmodule CurlReq do
   - `run_steps`: Run the Req.Steps before generating the curl command. Default: `true`. This option is semi-private, introduced to support CurlReq.Plugin.
   - `flags`: Specify the style the argument flags are constructed. Can either be `:short` or `:long`, Default: `:short`
   - `flavor` or `flavour`: With the `:curl` flavor (the default) it will try to use native curl representations for compression, auth and will use the native user agent. 
-  If flavor is set to `:req` the headers will not be modified and the curl command is contructed to stay as true as possible to the original `Req.Request`
+  If flavor is set to `:req` the headers will not be modified and the curl command is constructed to stay as true as possible to the original `Req.Request`
 
   ## Examples
 
