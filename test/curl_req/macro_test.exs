@@ -90,6 +90,50 @@ defmodule CurlReq.MacroTest do
                }
     end
 
+    test "data raw" do
+      assert ~CURL"""
+             curl 'https://example.com/graphql' \
+             -X POST \
+             -H 'Accept: application/graphql-response+json'\
+             --data-raw '{"operationName":"get","query":"query get {name}"}'
+             """ ==
+               %Req.Request{
+                 method: :post,
+                 url: URI.parse("https://example.com/graphql"),
+                 headers: %{"accept" => ["application/graphql-response+json"]},
+                 body: "{\"operationName\":\"get\",\"query\":\"query get {name}\"}",
+                 options: %{},
+                 halted: false,
+                 adapter: &Req.Steps.run_finch/1,
+                 request_steps: [],
+                 response_steps: [],
+                 error_steps: [],
+                 private: %{}
+               }
+    end
+
+    test "data raw with ansii escape" do
+      assert ~CURL"""
+             curl 'https://example.com/employees/107'\
+             -X PATCH\
+             -H 'Accept: application/vnd.api+json'\
+             --data-raw $'{"data":{"attributes":{"first-name":"Adam"}}}'
+             """ ==
+               %Req.Request{
+                 method: :patch,
+                 url: URI.parse("https://example.com/employees/107"),
+                 headers: %{"accept" => ["application/vnd.api+json"]},
+                 body: "{\"data\":{\"attributes\":{\"first-name\":\"Adam\"}}}",
+                 options: %{},
+                 halted: false,
+                 adapter: &Req.Steps.run_finch/1,
+                 request_steps: [],
+                 response_steps: [],
+                 error_steps: [],
+                 private: %{}
+               }
+    end
+
     test "auth" do
       assert ~CURL(curl http://example.com -u user:pass) ==
                %Req.Request{
@@ -167,7 +211,7 @@ defmodule CurlReq.MacroTest do
     test "sigil_CURL supports newlines" do
       curl = ~CURL"""
         curl -X POST \
-         --location \ 
+         --location \
          https://example.com
       """
 
@@ -184,7 +228,7 @@ defmodule CurlReq.MacroTest do
       curl =
         from_curl("""
           curl -X POST \
-           --location \ 
+           --location \
            https://example.com
         """)
 

@@ -18,6 +18,8 @@ defmodule CurlReq.Macro do
           header: :keep,
           request: :string,
           data: :keep,
+          data_raw: :keep,
+          data_ascii: :keep,
           cookie: :string,
           head: :boolean,
           form: :keep,
@@ -99,7 +101,15 @@ defmodule CurlReq.Macro do
 
   defp add_body(req, options) do
     body =
-      case Keyword.get_values(options, :data) do
+      [:data, :data_raw, :data_ascii]
+      |> Enum.reduce([], fn key, acc ->
+        case Keyword.get_values(options, key) do
+          [] -> acc
+          ["$" <> data] when key == :data_raw -> acc ++ [data]
+          values -> acc ++ values
+        end
+      end)
+      |> case do
         [] -> nil
         data -> Enum.join(data, "&")
       end
