@@ -105,7 +105,7 @@ defmodule CurlReq.Macro do
       |> Enum.reduce([], fn key, acc ->
         case Keyword.get_values(options, key) do
           [] -> acc
-          ["$" <> data] when key == :data_raw -> acc ++ [data]
+          ["$" <> data] -> acc ++ [data]
           values -> acc ++ values
         end
       end)
