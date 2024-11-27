@@ -101,7 +101,7 @@ defmodule CurlReq.Macro do
 
   defp add_body(req, options) do
     body =
-      [:data, :data_raw, :data_ascii]
+      [:data, :data_ascii, :data_raw]
       |> Enum.reduce([], fn key, acc ->
         case Keyword.get_values(options, key) do
           [] -> acc
