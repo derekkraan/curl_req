@@ -1,6 +1,8 @@
 # Changelog
 
 ## 0.98.6
+- Handle `--data-raw` and `--data-ascii` ([#16](https://github.com/derekkraan/curl_req/pull/16))
+- Strip `$` as necessary
 
 ## 0.98.5
 - Multiline Curl commands are now supported
