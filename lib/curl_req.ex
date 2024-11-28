@@ -55,7 +55,8 @@ defmodule CurlReq do
   * `-X`/`--request`
   * `-L`/`--location`
   * `-I`/`--head`
-  * `-d`/`--data`
+  * `-d`/`--data`/`--data-ascii`
+  * `--data-raw`
 
   Options:
 
