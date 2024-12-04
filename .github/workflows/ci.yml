@@ -5,28 +5,50 @@ on:
       - main
 
 jobs:
-  test:
+  main:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        elixir-version: [1.16, 1.15]
-        otp-version: [26, 25, 24]
+        include:
+          - elixir_version: '1.17'
+            otp_version: '27.0'
+            lint: true
+          - elixir_version: '1.17'
+            otp_version: '27.0'
+            req_0_4: true
+          - elixir_version: '1.16'
+            otp_version: '26.2.5'
+          - elixir_version: '1.16'
+            otp_version: '26.2.5'
+            req_0_4: true
+          - elixir_version: '1.15'
+            otp_version: '25.3.2.12'
+          - elixir_version: '1.15'
+            otp_version: '25.3.2.12'
+            req_0_4: true
 
-    name: Tests
+    name: Elixir ${{ matrix.elixir_version}} - OTP ${{ matrix.otp_version }} ${{ matrix.lint && '- Lint' }} ${{ matrix.req_0_4 && '- Req 0.4' }}
 
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.elixir-version }}
-          otp-version: ${{ matrix.otp-version }}
+          elixir-version: ${{ matrix.elixir_version }}
+          otp-version: ${{ matrix.otp_version }}
 
-      - run: mix deps.get
+      - run: cp blend/req_0_4.mix.lock mix.lock
+        if: ${{ matrix.req_0_4 }}
+
+      - run: mix deps.get --check-locked
 
       - run: mix compile --warnings-as-errors
-        if: matrix.elixir-version == 1.16 && matrix.otp-version == 26
+        if: ${{ matrix.lint }}
 
       - run: mix format --check-formatted
-        if: matrix.elixir-version == 1.16 && matrix.otp-version == 26
+        if: ${{ matrix.lint }}
+
+      - run: mix deps.unlock --check-unused
+        if: ${{ matrix.lint }}
 
       - run: mix test
