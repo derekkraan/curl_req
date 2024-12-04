@@ -18,9 +18,10 @@ defmodule CurlReq do
   Returns the unchanged `req`, just like `IO.inspect/2`.
 
   ## Examples
-      iex> Req.new(url: URI.parse("https://www.google.com"))
-      ...> |> CurlReq.inspect()
-      ...> # |> Req.request!()
+      Req.new(url: "https://example.com")
+      |> CurlReq.inspect()
+      |> Req.request!()
+      #=> curl --compressed -X GET https://example.com
 
   """
   @spec inspect(Req.Request.t(), [inspect_opt()]) :: Req.Request.t()
@@ -67,13 +68,13 @@ defmodule CurlReq do
 
   ## Examples
 
-      iex> Req.new(url: URI.parse("https://www.google.com"))
+      iex> Req.new(url: URI.parse("https://www.example.com"))
       ...> |> CurlReq.to_curl()
-      ~S(curl --compressed -X GET https://www.google.com)
+      ~S(curl --compressed -X GET https://www.example.com)
 
-      iex> Req.new(url: URI.parse("https://www.google.com"))
+      iex> Req.new(url: URI.parse("https://www.example.com"))
       ...> |> CurlReq.to_curl(flags: :long, flavor: :req)
-      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.google.com)
+      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.example.com)
 
   """
   @type flags :: :short | :long
@@ -210,8 +211,8 @@ defmodule CurlReq do
 
   ## Examples
 
-      iex> CurlReq.from_curl("curl https://www.google.com")
-      %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+      iex> CurlReq.from_curl("curl https://www.example.com")
+      %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
 
       iex> ~S(curl -d "some data" https://example.com) |> CurlReq.from_curl()
       %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
@@ -233,8 +234,8 @@ defmodule CurlReq do
   ## Examples
 
       iex> import CurlReq
-      ...> ~CURL(curl "https://www.google.com")
-      %Req.Request{method: :get, url: URI.parse("https://www.google.com")}
+      ...> ~CURL(curl "https://www.example.com")
+      %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
 
       iex> import CurlReq
       ...> ~CURL(curl -d "some data" "https://example.com")

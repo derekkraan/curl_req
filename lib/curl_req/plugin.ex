@@ -10,10 +10,10 @@ defmodule CurlReq.Plugin do
 
   ## Examples
 
-      iex> Req.new(url: "https://catfact.ninja/fact")
+      iex> Req.new(url: "https://example.com/fact")
       ...> |>CurlReq.Plugin.attach()
 
-      iex> Req.new(url: "https://catfact.ninja/fact")
+      iex> Req.new(url: "https://example.com/fact")
       ...> |> CurlReq.Plugin.attach(log_level: :info, log_metadata: [ansi_color: :blue])
 
   # Possible improvements

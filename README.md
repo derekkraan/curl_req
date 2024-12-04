@@ -20,16 +20,16 @@ And you'll have the full curl command.
 ```elixir
 # Turn a Req request into a `curl` command.
 
-iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
+iex> Req.new(url: "/fact", base_url: "https://example.com/")
 ...> |> CurlReq.to_curl()
-"curl --compressed -X GET https://catfact.ninja/fact" 
+"curl --compressed -X GET https://example.com/fact" 
 
 # Or use `CurlReq.inspect/2` to inspect inline.
 
-iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
-...> |> CurlReq.inspect(label: "MY REQ")
-...> # |> Req.request!()
-
+Req.new(url: "https://example.com")
+|> CurlReq.inspect()
+|> Req.request!()
+#=> curl --compressed -X GET https://example.com
 ```
 
 ### Curl to Req
@@ -38,25 +38,24 @@ iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
 
 ```elixir
 iex> import CurlReq
-...> ~CURL(curl https://www.google.com)
+...> ~CURL(curl https://www.example.com)
 ...> # |> Req.request!()
 
 ```
 
 or use `CurlReq.from_curl/1`:
 ```elixir
-iex> CurlReq.from_curl("curl https://www.google.com")
+iex> CurlReq.from_curl("curl https://example.com")
 ...> # |> Req.request!()
 
 ```
-
 
 ### Req Plugin
 
 One final feature to note the Req plugin, `CurlReq.Plugin`. Use `CurlReq.Plugin.attach/2` to set up curl logging (inspired by `TeslaCurl`).
 
 ```elixir
-iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
+iex> Req.new(url: "/fact", base_url: "https://example.com/")
 ...> |> CurlReq.Plugin.attach()
 ...> # |> Req.request!()
 
@@ -82,15 +81,6 @@ The docs can be found at <https://hexdocs.pm/curl_req>.
 ## Contributions
 
 Contributions are welcome! There are gaps in the library, and this is open source, so let's work together to fill them!
-
-- [x] ~CURL sigil handles newlines
-- [x] curl [url]
-- [x] curl -H
-- [x] curl -X
-- [x] curl -d
-- [x] curl -b
-- [x] curl long form options (--header, --data, etc)
-- [x] Req Plugin to log curl command (like `TeslaCurl`)
 
 ## How to contribute
 

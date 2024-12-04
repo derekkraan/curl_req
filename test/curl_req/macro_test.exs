@@ -5,11 +5,11 @@ defmodule CurlReq.MacroTest do
 
   describe "macro" do
     test "single header" do
-      assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://catfact.ninja/fact) ==
+      assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://example.com/fact) ==
                %Req.Request{
                  method: :get,
                  headers: %{"user-agent" => ["req/0.4.14"]},
-                 url: URI.parse("https://catfact.ninja/fact")
+                 url: URI.parse("https://example.com/fact")
                }
     end
 
@@ -49,10 +49,10 @@ defmodule CurlReq.MacroTest do
     end
 
     test "without curl prefix" do
-      assert ~CURL(http://localhost) ==
+      assert ~CURL(http://example.com) ==
                %Req.Request{
                  method: :get,
-                 url: URI.parse("http://localhost")
+                 url: URI.parse("http://example.com")
                }
     end
 
@@ -152,12 +152,12 @@ defmodule CurlReq.MacroTest do
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer <YOUR-TOKEN>" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
-        https://api.github.com/users
+        https://example.com/users
       """
 
       assert curl ==
                %Req.Request{
-                 url: URI.parse("https://api.github.com/users"),
+                 url: URI.parse("https://example.com/users"),
                  body: nil,
                  headers: %{
                    "accept" => ["application/vnd.github+json"],
@@ -242,7 +242,7 @@ defmodule CurlReq.MacroTest do
     end
 
     test "accepts newlines ending in backslash" do
-      uri = URI.parse("https://hello.myshopify.com/api/2024-07/graphql.json")
+      uri = URI.parse("https://example.com/api/2024-07/graphql.json")
 
       assert %Req.Request{
                method: :post,
@@ -250,7 +250,7 @@ defmodule CurlReq.MacroTest do
                headers: %{"content-type" => ["application/json"]}
              } = ~CURL"""
                  curl -X POST \
-                   https://hello.myshopify.com/api/2024-07/graphql.json \
+                   https://example.com/api/2024-07/graphql.json \
                    -H 'Content-Type: application/json' \
                    -H 'X-Shopify-Storefront-Access-Token: ABCDEF' \
                    -d '{
@@ -273,7 +273,7 @@ defmodule CurlReq.MacroTest do
                headers: %{"content-type" => ["application/json"]}
              } = ~CURL"""
                  curl -X POST
-                   https://hello.myshopify.com/api/2024-07/graphql.json
+                   https://example.com/api/2024-07/graphql.json
                    -H 'Content-Type: application/json'
                    -H 'X-Shopify-Storefront-Access-Token: ABCDEF'
                    -d '{
