@@ -22,8 +22,8 @@ defmodule CurlReqTest do
 
   describe "to_curl" do
     test "works with base URL" do
-      assert "curl --compressed -X GET https://catfact.ninja/fact" ==
-               Req.new(url: "/fact", base_url: "https://catfact.ninja/")
+      assert "curl --compressed -X GET https://example.com/fact" ==
+               Req.new(url: "/fact", base_url: "https://example.com/")
                |> CurlReq.to_curl()
     end
 
@@ -63,11 +63,11 @@ defmodule CurlReqTest do
     end
 
     test "works when body is iodata" do
-      assert "curl --compressed -d hello -X POST https://catfact.ninja/fact" ==
+      assert "curl --compressed -d hello -X POST https://example.com/fact" ==
                Req.new(
                  method: :post,
                  url: "/fact",
-                 base_url: "https://catfact.ninja",
+                 base_url: "https://example.com",
                  body: ["h" | ["e" | ["llo"]]]
                )
                |> CurlReq.to_curl()
