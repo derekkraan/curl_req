@@ -18,9 +18,10 @@ defmodule CurlReq do
   Returns the unchanged `req`, just like `IO.inspect/2`.
 
   ## Examples
-      iex> Req.new(url: URI.parse("https://www.google.com"))
-      ...> |> CurlReq.inspect()
-      ...> # |> Req.request!()
+      Req.new(url: URI.parse("https://www.google.com"))
+      |> CurlReq.inspect()
+      |> Req.request!()
+      #=> curl --compressed -X GET https://www.google.com
 
   """
   @spec inspect(Req.Request.t(), [inspect_opt()]) :: Req.Request.t()

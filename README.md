@@ -26,10 +26,10 @@ iex> Req.new(url: "/fact", base_url: "https://catfact.ninja/")
 
 # Or use `CurlReq.inspect/2` to inspect inline.
 
-iex> Req.new(url: "/fact", base_url: "https://catfact.nijna/")
-...> |> CurlReq.inspect(label: "MY REQ")
-...> # |> Req.request!()
-
+Req.new(url: URI.parse("https://www.google.com"))
+|> CurlReq.inspect()
+|> Req.request!()
+#=> curl --compressed -X GET https://www.google.com
 ```
 
 ### Curl to Req

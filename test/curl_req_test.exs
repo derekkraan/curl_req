@@ -2,6 +2,23 @@ defmodule CurlReqTest do
   use ExUnit.Case, async: true
   doctest CurlReq
   import CurlReq
+  import ExUnit.CaptureIO
+
+  describe "inspect" do
+    test "without label" do
+      assert capture_io(fn ->
+               Req.new(url: "/without_label", base_url: "https://example.com/")
+               |> CurlReq.inspect(label: "MY REQ")
+             end) != "curl --compressed -X GET https://example.com/without_label"
+    end
+
+    test "with label" do
+      assert capture_io(fn ->
+               Req.new(url: "/with_label", base_url: "https://example.com/")
+               |> CurlReq.inspect(label: "MY REQ")
+             end) != "MY REQ: curl --compressed -X GET https://example.com/with_label"
+    end
+  end
 
   describe "to_curl" do
     test "works with base URL" do
