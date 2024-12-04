@@ -24,3 +24,7 @@ curl_req-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# blend library
+/blend/_build
+/blend/deps
