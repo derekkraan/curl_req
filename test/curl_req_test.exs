@@ -8,15 +8,15 @@ defmodule CurlReqTest do
     test "without label" do
       assert capture_io(fn ->
                Req.new(url: "/without_label", base_url: "https://example.com/")
-               |> CurlReq.inspect(label: "MY REQ")
-             end) != "curl --compressed -X GET https://example.com/without_label"
+               |> CurlReq.inspect()
+             end) === "curl --compressed -X GET https://example.com/without_label\n"
     end
 
     test "with label" do
       assert capture_io(fn ->
                Req.new(url: "/with_label", base_url: "https://example.com/")
                |> CurlReq.inspect(label: "MY REQ")
-             end) != "MY REQ: curl --compressed -X GET https://example.com/with_label"
+             end) === "MY REQ: curl --compressed -X GET https://example.com/with_label\n"
     end
   end
 
