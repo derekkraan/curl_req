@@ -50,7 +50,6 @@ iex> CurlReq.from_curl("curl https://www.google.com")
 
 ```
 
-
 ### Req Plugin
 
 One final feature to note the Req plugin, `CurlReq.Plugin`. Use `CurlReq.Plugin.attach/2` to set up curl logging (inspired by `TeslaCurl`).
@@ -82,15 +81,6 @@ The docs can be found at <https://hexdocs.pm/curl_req>.
 ## Contributions
 
 Contributions are welcome! There are gaps in the library, and this is open source, so let's work together to fill them!
-
-- [x] ~CURL sigil handles newlines
-- [x] curl [url]
-- [x] curl -H
-- [x] curl -X
-- [x] curl -d
-- [x] curl -b
-- [x] curl long form options (--header, --data, etc)
-- [x] Req Plugin to log curl command (like `TeslaCurl`)
 
 ## How to contribute
 
