@@ -28,8 +28,8 @@ defmodule CurlReq.Macro do
           compressed: :boolean,
           proxy: :string,
           proxy_user: :string,
-          user: :string,
-          netrc: :boolean
+          netrc: :boolean,
+          netrc_file: :string
         ],
         aliases: [
           H: :header,
@@ -177,15 +177,39 @@ defmodule CurlReq.Macro do
   end
 
   defp add_auth(req, options) do
-    case Keyword.get(options, :user) do
+    req =
+      case Keyword.get(options, :user) do
+        nil ->
+          req
+
+        credentials ->
+          req
+          |> Req.Request.register_options([:auth])
+          |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+          |> Req.merge(auth: {:basic, credentials})
+      end
+
+    req =
+      case Keyword.get(options, :netrc) do
+        nil ->
+          req
+
+        true ->
+          req
+          |> Req.Request.register_options([:auth])
+          |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+          |> Req.merge(auth: :netrc)
+      end
+
+    case Keyword.get(options, :netrc_file) do
       nil ->
         req
 
-      credentials ->
+      path ->
         req
         |> Req.Request.register_options([:auth])
         |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
-        |> Req.merge(auth: {:basic, credentials})
+        |> Req.merge(auth: {:netrc, path})
     end
   end
 
