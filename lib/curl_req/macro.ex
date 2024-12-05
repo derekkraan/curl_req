@@ -27,7 +27,9 @@ defmodule CurlReq.Macro do
           user: :string,
           compressed: :boolean,
           proxy: :string,
-          proxy_user: :string
+          proxy_user: :string,
+          user: :string,
+          netrc: :boolean
         ],
         aliases: [
           H: :header,
@@ -39,7 +41,8 @@ defmodule CurlReq.Macro do
           L: :location,
           u: :user,
           x: :proxy,
-          U: :proxy_user
+          U: :proxy_user,
+          n: :netrc
         ]
       )
 
@@ -102,6 +105,12 @@ defmodule CurlReq.Macro do
             |> Req.Request.register_options([:auth])
             |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
             |> Req.merge(auth: {:bearer, token})
+
+          {"authorization", "Basic " <> token} ->
+            req
+            |> Req.Request.register_options([:auth])
+            |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+            |> Req.merge(auth: {:basic, token})
 
           _ ->
             Req.Request.put_header(req, key, value)

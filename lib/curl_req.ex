@@ -60,6 +60,9 @@ defmodule CurlReq do
   * `--data-raw`
   * `-x`/`--proxy`
   * `-U`/`--proxy-user`
+  * `-u`/`--user`
+  * `-n`/`--netrc`
+  * `--netrc-file`
 
   Options:
 
@@ -89,9 +92,10 @@ defmodule CurlReq do
         ]
   @spec to_curl(Req.Request.t(), to_curl_opts()) :: String.t()
   def to_curl(req, options \\ []) do
-    flag_style = Keyword.get(options, :flags, :short)
-    flavor = Keyword.get(options, :flavor, nil) || Keyword.get(options, :flavour, :curl)
     run_steps? = Keyword.get(options, :run_steps, true)
+    opts = Keyword.validate!(options, flags: :short, run_steps: true, flavor: nil, flavour: :curl)
+    flavor = opts[:flavor] || opts[:flavour]
+    flag_style = opts[:flags]
 
     req =
       if run_steps? do
@@ -126,9 +130,6 @@ defmodule CurlReq do
         %{compressed: true} ->
           if run_steps?, do: [], else: [compressed_flag()]
 
-        %{auth: {:basic, credentials}} ->
-          [user_flag(flag_style), credentials] ++ [basic_auth_flag()]
-
         %{connect_options: connect_options} ->
           proxy =
             case Keyword.get(connect_options, :proxy) do
@@ -146,7 +147,24 @@ defmodule CurlReq do
             _ ->
               proxy
           end
+      end
 
+    auth =
+      with %{auth: scheme} <- req.options do
+        case scheme do
+          {:basic, value} ->
+            [user_flag(flag_style), value] ++ [basic_auth_flag()]
+
+          :netrc ->
+            [netrc_flag(flag_style)]
+
+          {:netrc, filepath} ->
+            [netrc_file_flag(flag_style), filepath]
+
+          _ ->
+            []
+        end
+      else
         _ ->
           []
       end
@@ -162,7 +180,7 @@ defmodule CurlReq do
 
     CurlReq.Shell.cmd_to_string(
       "curl",
-      headers ++ cookies ++ body ++ options ++ method ++ url
+      auth ++ headers ++ cookies ++ body ++ options ++ method ++ url
     )
   end
 
@@ -213,6 +231,11 @@ defmodule CurlReq do
 
   defp proxy_user_flag(:short), do: "-U"
   defp proxy_user_flag(:long), do: "--proxy-user"
+
+  defp netrc_flag(:short), do: "-n"
+  defp netrc_flag(:long), do: "--netrc"
+
+  defp netrc_file_flag(_), do: "--netrc-file"
 
   @doc """
   Transforms a curl command into a Req request.
