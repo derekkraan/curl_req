@@ -25,7 +25,10 @@ defmodule CurlReq.Macro do
           form: :keep,
           location: :boolean,
           user: :string,
-          compressed: :boolean
+          compressed: :boolean,
+          user: :string,
+          netrc: :boolean,
+          netrc_file: :string
         ],
         aliases: [
           H: :header,
@@ -35,7 +38,8 @@ defmodule CurlReq.Macro do
           I: :head,
           F: :form,
           L: :location,
-          u: :user
+          u: :user,
+          n: :netrc
         ]
       )
 
@@ -78,6 +82,12 @@ defmodule CurlReq.Macro do
             |> Req.Request.register_options([:auth])
             |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
             |> Req.merge(auth: {:bearer, token})
+
+          {"authorization", "Basic " <> token} ->
+            req
+            |> Req.Request.register_options([:auth])
+            |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+            |> Req.merge(auth: {:basic, token})
 
           _ ->
             Req.Request.put_header(req, key, value)
@@ -144,15 +154,39 @@ defmodule CurlReq.Macro do
   end
 
   defp add_auth(req, options) do
-    case Keyword.get(options, :user) do
+    req =
+      case Keyword.get(options, :user) do
+        nil ->
+          req
+
+        credentials ->
+          req
+          |> Req.Request.register_options([:auth])
+          |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+          |> Req.merge(auth: {:basic, credentials})
+      end
+
+    req =
+      case Keyword.get(options, :netrc) do
+        nil ->
+          req
+
+        true ->
+          req
+          |> Req.Request.register_options([:auth])
+          |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
+          |> Req.merge(auth: :netrc)
+      end
+
+    case Keyword.get(options, :netrc_file) do
       nil ->
         req
 
-      credentials ->
+      path ->
         req
         |> Req.Request.register_options([:auth])
         |> Req.Request.prepend_request_steps(auth: &Req.Steps.auth/1)
-        |> Req.merge(auth: {:basic, credentials})
+        |> Req.merge(auth: {:netrc, path})
     end
   end
 
