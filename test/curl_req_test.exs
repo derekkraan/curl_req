@@ -131,5 +131,17 @@ defmodule CurlReqTest do
                Req.new(url: "https://example.com", auth: {:netrc, netrc_path})
                |> CurlReq.to_curl()
     end
+
+    test "include `encode_body` does not run `comporessed` or other steps" do
+      assert ~S(curl -H "accept: application/json" -H "content-type: application/json" -d "{\"key\":\"val\"}" -X GET https://example.com) ==
+               Req.new(url: "https://example.com", json: %{key: "val"})
+               |> CurlReq.to_curl(run_steps: [only: [:encode_body]])
+    end
+
+    test "exclude `compressed` and `encode_body` do not run" do
+      assert "curl -X GET https://example.com" ==
+               Req.new(url: "https://example.com", json: %{key: "val"})
+               |> CurlReq.to_curl(run_steps: [except: [:compressed, :encode_body]])
+    end
   end
 end
