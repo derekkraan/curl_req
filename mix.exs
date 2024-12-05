@@ -26,7 +26,8 @@ defmodule CurlReq.MixProject do
   defp deps do
     [
       {:req, "~> 0.4.0 or ~> 0.5.0"},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:blend, "~> 0.4.1", only: :dev}
     ]
   end
 
