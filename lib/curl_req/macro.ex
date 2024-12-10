@@ -50,7 +50,7 @@ defmodule CurlReq.Macro do
 
     %Req.Request{}
     # Req would accept an URI struct but here we use to_string/1 because Req uses URI.parse/1 which sets the deprecated `authority` field which upsets the test assertions.
-    # Can be removed the Req uses URI.new/1
+    # Can be removed when Req uses URI.new/1
     |> Req.merge(url: URI.to_string(url))
     |> add_header(options)
     |> add_method(options)
