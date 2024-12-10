@@ -90,5 +90,28 @@ defmodule CurlReqTest do
                Req.new(url: "https://example.com", auth: {:basic, "user:pass"})
                |> CurlReq.to_curl()
     end
+
+    test "proxy" do
+      assert ~S(curl --compressed -x "http://my.proxy.com:80" -X GET https://example.com) ==
+               Req.new(
+                 url: "https://example.com",
+                 connect_options: [proxy: {:http, "my.proxy.com", 80, []}]
+               )
+               |> CurlReq.to_curl()
+    end
+
+    test "proxy user" do
+      assert ~S(curl --compressed -x "http://my.proxy.com:80" -U foo:bar -X GET https://example.com) ==
+               Req.new(
+                 url: "https://example.com",
+                 connect_options: [
+                   proxy: {:http, "my.proxy.com", 80, []},
+                   proxy_headers: [
+                     {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
+                   ]
+                 ]
+               )
+               |> CurlReq.to_curl()
+    end
   end
 end

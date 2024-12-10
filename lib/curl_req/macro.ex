@@ -25,7 +25,9 @@ defmodule CurlReq.Macro do
           form: :keep,
           location: :boolean,
           user: :string,
-          compressed: :boolean
+          compressed: :boolean,
+          proxy: :string,
+          proxy_user: :string
         ],
         aliases: [
           H: :header,
@@ -35,7 +37,9 @@ defmodule CurlReq.Macro do
           I: :head,
           F: :form,
           L: :location,
-          u: :user
+          u: :user,
+          x: :proxy,
+          U: :proxy_user
         ]
       )
 
@@ -59,6 +63,7 @@ defmodule CurlReq.Macro do
     |> add_form(options)
     |> add_auth(options)
     |> add_compression(options)
+    |> add_proxy(options)
     |> configure_redirects(options)
   end
 
@@ -167,6 +172,56 @@ defmodule CurlReq.Macro do
         |> Req.Request.prepend_request_steps(compressed: &Req.Steps.compressed/1)
         |> Req.merge(compressed: bool)
     end
+  end
+
+  defp add_proxy(req, options) do
+    with proxy when is_binary(proxy) <- Keyword.get(options, :proxy),
+         %URI{scheme: scheme, port: port, host: host} when scheme in ["http", "https"] <-
+           validate_proxy_uri(proxy) do
+      connect_options =
+        [
+          proxy: {String.to_existing_atom(scheme), host, port, []}
+        ]
+        |> maybe_add_proxy_auth(options)
+
+      req
+      |> Req.Request.register_options([
+        :connect_options
+      ])
+      |> Req.merge(connect_options: connect_options)
+    else
+      _ -> req
+    end
+  end
+
+  defp validate_proxy_uri("http://" <> _rest = uri), do: URI.parse(uri)
+  defp validate_proxy_uri("https://" <> _rest = uri), do: URI.parse(uri)
+
+  defp validate_proxy_uri(uri) do
+    case String.split(uri, "://") do
+      [scheme, _uri] ->
+        raise ArgumentError, "Unsupported scheme #{scheme} for proxy in #{uri}"
+
+      [uri] ->
+        URI.parse("http://" <> uri)
+    end
+  end
+
+  defp maybe_add_proxy_auth(connect_options, options) do
+    proxy_headers =
+      case Keyword.get(options, :proxy_user) do
+        nil ->
+          []
+
+        credentials ->
+          [
+            proxy_headers: [
+              {"proxy-authorization", "Basic " <> Base.encode64(credentials)}
+            ]
+          ]
+      end
+
+    Keyword.merge(connect_options, proxy_headers)
   end
 
   defp configure_redirects(req, options) do

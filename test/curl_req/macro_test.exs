@@ -205,6 +205,43 @@ defmodule CurlReq.MacroTest do
                  response_steps: [redirect: &Req.Steps.redirect/1]
                }
     end
+
+    test "proxy" do
+      assert ~CURL(curl --proxy my.proxy.com:22225 http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [proxy: {:http, "my.proxy.com", 22225, []}]
+                 }
+               }
+    end
+
+    test "proxy with basic auth" do
+      assert ~CURL(curl --proxy https://my.proxy.com:22225 --proxy-user foo:bar http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     proxy: {:https, "my.proxy.com", 22225, []},
+                     proxy_headers: [
+                       {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
+                     ]
+                   ]
+                 }
+               }
+    end
+
+    test "proxy raises on non http scheme uri" do
+      assert_raise(
+        ArgumentError,
+        "Unsupported scheme ssh for proxy in ssh://my.proxy.com:22225",
+        fn ->
+          CurlReq.Macro.parse("curl --proxy ssh://my.proxy.com:22225 http://example.com")
+        end
+      )
+    end
   end
 
   describe "newlines" do
