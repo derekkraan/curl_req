@@ -233,6 +233,22 @@ defmodule CurlReq.MacroTest do
                }
     end
 
+    test "proxy with inline basic auth" do
+      assert ~CURL(curl --proxy https://foo:bar@my.proxy.com:22225 http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     proxy: {:https, "my.proxy.com", 22225, []},
+                     proxy_headers: [
+                       {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
+                     ]
+                   ]
+                 }
+               }
+    end
+
     test "proxy raises on non http scheme uri" do
       assert_raise(
         ArgumentError,

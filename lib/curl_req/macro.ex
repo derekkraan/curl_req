@@ -176,13 +176,14 @@ defmodule CurlReq.Macro do
 
   defp add_proxy(req, options) do
     with proxy when is_binary(proxy) <- Keyword.get(options, :proxy),
-         %URI{scheme: scheme, port: port, host: host} when scheme in ["http", "https"] <-
+         %URI{scheme: scheme, port: port, host: host, userinfo: userinfo}
+         when scheme in ["http", "https"] <-
            validate_proxy_uri(proxy) do
       connect_options =
         [
           proxy: {String.to_existing_atom(scheme), host, port, []}
         ]
-        |> maybe_add_proxy_auth(options)
+        |> maybe_add_proxy_auth(options, userinfo)
 
       req
       |> Req.Request.register_options([
@@ -207,7 +208,7 @@ defmodule CurlReq.Macro do
     end
   end
 
-  defp maybe_add_proxy_auth(connect_options, options) do
+  defp maybe_add_proxy_auth(connect_options, options, nil) do
     proxy_headers =
       case Keyword.get(options, :proxy_user) do
         nil ->
@@ -220,6 +221,16 @@ defmodule CurlReq.Macro do
             ]
           ]
       end
+
+    Keyword.merge(connect_options, proxy_headers)
+  end
+
+  defp maybe_add_proxy_auth(connect_options, _options, userinfo) do
+    proxy_headers = [
+      proxy_headers: [
+        {"proxy-authorization", "Basic " <> Base.encode64(userinfo)}
+      ]
+    ]
 
     Keyword.merge(connect_options, proxy_headers)
   end
