@@ -15,7 +15,7 @@ defmodule CurlReq.Curl do
           auth: :none
         }
 
-  @type header() :: {String.t(), String.t()}
+  @type header() :: %{optional(String.t()) => [String.t()]}
   @type cookie() :: {String.t(), String.t()}
   @type auth() :: {auth_option(), String.t()} | auth_option()
   @type(auth_option() :: :none, :basic, :bearer, :netrc)
@@ -37,13 +37,14 @@ defmodule CurlReq.Curl do
   def to_curl(%__MODULE__{} = request) do
     headers =
       for {key, val} <- request.headers do
+        val = Enum.intersperse(val, ";")
         ["-H \"", key, ": ", val, "\""]
       end
 
     ["curl", headers, request.url] |> Enum.intersperse(" ") |> IO.iodata_to_binary()
   end
 
-  def to_req(%__MODULE__{} = request, opts \\ []) do
+  def to_req(%__MODULE__{} = request, _opts \\ []) do
     %Req.Request{}
     |> Req.merge(url: request.url)
     |> add_header(request.headers)
