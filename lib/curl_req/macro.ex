@@ -10,7 +10,7 @@ defmodule CurlReq.Macro do
       |> String.replace("\\\n", " ")
       |> String.replace("\n", " ")
 
-    {options, rest, _invalid} =
+    {options, rest, invalid} =
       command
       |> OptionParser.split()
       |> OptionParser.parse(
@@ -38,6 +38,25 @@ defmodule CurlReq.Macro do
           u: :user
         ]
       )
+
+    if invalid != [] do
+      errors =
+        Enum.map(invalid, fn
+          {flag, nil} -> "Unknown #{inspect(flag)}"
+          {flag, value} -> "Invalid value #{inspect(value)} for #{inspect(flag)}"
+        end)
+        |> Enum.join("\n")
+
+      raise ArgumentError, """
+
+      Command: \'curl #{command}\"
+      Unsupported or invalid flag(s) encountered:
+
+      #{errors}
+
+      Please remove the unknown flags and open an issue at https://github.com/derekkraan/curl_req
+      """
+    end
 
     [url] =
       rest

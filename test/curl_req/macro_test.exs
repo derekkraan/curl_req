@@ -290,5 +290,11 @@ defmodule CurlReq.MacroTest do
                    }'
              """
     end
+
+    test "raises on unsupported flag" do
+      assert_raise ArgumentError, ~r/Unknown "--foo"/, fn ->
+        CurlReq.Macro.parse(~s(curl --foo https://example.com))
+      end
+    end
   end
 end
