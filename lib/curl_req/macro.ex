@@ -104,16 +104,16 @@ defmodule CurlReq.Macro do
       Enum.flat_map([:data, :data_ascii, :data_raw], fn key ->
         case Keyword.get_values(options, key) do
           [] -> []
-          ["$" <> data] -> [data]
-          values -> values
+          values -> Enum.map(values, &String.trim_leading(&1, "$"))
         end
       end)
-      |> case do
-        [] -> nil
-        data -> Enum.join(data, "&")
-      end
+      |> Enum.join("&")
 
-    Req.merge(req, body: body)
+    if body != [] do
+      Req.merge(req, body: body)
+    else
+      Req.merge(req, body: nil)
+    end
   end
 
   defp add_cookie(req, options) do
