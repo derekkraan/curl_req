@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.98.7
+
+- Add new supported flags: `--proxy` and `--proxy-user`
+
 ## 0.98.6
 - Handle `--data-raw` and `--data-ascii` ([#16](https://github.com/derekkraan/curl_req/pull/16))
 - Strip `$` as necessary

@@ -58,6 +58,8 @@ defmodule CurlReq do
   * `-I`/`--head`
   * `-d`/`--data`/`--data-ascii`
   * `--data-raw`
+  * `-x`/`--proxy`
+  * `-U`/`--proxy-user`
 
   Options:
 
@@ -127,6 +129,24 @@ defmodule CurlReq do
         %{auth: {:basic, credentials}} ->
           [user_flag(flag_style), credentials] ++ [basic_auth_flag()]
 
+        %{connect_options: connect_options} ->
+          proxy =
+            case Keyword.get(connect_options, :proxy) do
+              nil ->
+                []
+
+              {scheme, host, port, _} ->
+                [proxy_flag(flag_style), "#{scheme}://#{host}:#{port}"]
+            end
+
+          case Keyword.get(connect_options, :proxy_headers) do
+            [{"proxy-authorization", "Basic " <> encoded_creds}] ->
+              proxy ++ [proxy_user_flag(flag_style), Base.decode64!(encoded_creds)]
+
+            _ ->
+              proxy
+          end
+
         _ ->
           []
       end
@@ -188,6 +208,12 @@ defmodule CurlReq do
 
   defp compressed_flag(), do: "--compressed"
 
+  defp proxy_flag(:short), do: "-x"
+  defp proxy_flag(:long), do: "--proxy"
+
+  defp proxy_user_flag(:short), do: "-U"
+  defp proxy_user_flag(:long), do: "--proxy-user"
+
   @doc """
   Transforms a curl command into a Req request.
 
@@ -201,6 +227,8 @@ defmodule CurlReq do
   * `-F`/`--form`
   * `-L`/`--location`
   * `-u`/`--user`
+  * `-x`/`--proxy`
+  * `-U`/`--proxy-user`
   * `--compressed`
 
   The `curl` command prefix is optional
