@@ -34,8 +34,30 @@ defmodule CurlReq do
     req
   end
 
-  defp run_steps(req) do
-    Enum.reduce(req.request_steps, req, fn {step_name, step}, req ->
+  @spec step_names(Req.Request.t(), boolean()) :: [atom()]
+  defp step_names(%Req.Request{} = _req, false), do: []
+  defp step_names(%Req.Request{} = req, true), do: req.request_steps |> Keyword.keys()
+
+  @spec step_names(Req.Request.t(), [atom()]) :: [atom()]
+  defp step_names(%Req.Request{} = req, except: excludes) do
+    for {name, _} <- req.request_steps, name not in excludes do
+      name
+    end
+  end
+
+  defp step_names(%Req.Request{} = req, only: includes) do
+    for {name, _} <- req.request_steps, name in includes do
+      name
+    end
+  end
+
+  @spec run_steps(Req.Request.t(), [atom()]) :: Req.Request.t()
+  defp run_steps(req, steps) do
+    req.request_steps
+    |> Enum.filter(fn {step, _} ->
+      step in steps
+    end)
+    |> Enum.reduce(req, fn {step_name, step}, req ->
       case step.(req) do
         {_req, _response_or_error} ->
           raise "The request was stopped by #{step_name} request_step."
@@ -60,10 +82,17 @@ defmodule CurlReq do
   * `--data-raw`
   * `-x`/`--proxy`
   * `-U`/`--proxy-user`
+  * `-u`/`--user`
+  * `-n`/`--netrc`
+  * `--netrc-file`
 
   Options:
 
-  - `run_steps`: Run the Req.Steps before generating the curl command. Default: `true`. This option is semi-private, introduced to support CurlReq.Plugin.
+  - `run_steps`: Run the Req.Steps before generating the curl command to have fine-tuned control over the Req.Request. Default: `true`. 
+    * `true`: Run all steps
+    * `false`: Run no steps
+    * `only: [atom()]`: A list of step names as atoms and only they will be executed
+    * `except: [atom()]`: A list of step names as atoms and these steps will be excluded from the executed steps
   - `flags`: Specify the style the argument flags are constructed. Can either be `:short` or `:long`, Default: `:short`
   - `flavor` or `flavour`: With the `:curl` flavor (the default) it will try to use native curl representations for compression, auth and will use the native user agent. 
   If flavor is set to `:req` the headers will not be modified and the curl command is constructed to stay as true as possible to the original `Req.Request`
@@ -78,6 +107,9 @@ defmodule CurlReq do
       ...> |> CurlReq.to_curl(flags: :long, flavor: :req)
       ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.example.com)
 
+      iex> Req.new(url: "https://www.example.com")
+      ...> |> CurlReq.to_curl(run_steps: [except: [:compressed]])
+      ~S(curl -X GET https://www.example.com)
   """
   @type flags :: :short | :long
   @type flavor :: :curl | :req
@@ -85,20 +117,17 @@ defmodule CurlReq do
           flags: flags(),
           flavor: flavor(),
           flavour: flavor(),
-          run_steps: boolean()
+          run_steps: boolean() | [only: [atom()]] | [except: [atom()]]
         ]
   @spec to_curl(Req.Request.t(), to_curl_opts()) :: String.t()
   def to_curl(req, options \\ []) do
-    flag_style = Keyword.get(options, :flags, :short)
-    flavor = Keyword.get(options, :flavor, nil) || Keyword.get(options, :flavour, :curl)
-    run_steps? = Keyword.get(options, :run_steps, true)
+    opts = Keyword.validate!(options, flags: :short, run_steps: true, flavor: nil, flavour: :curl)
+    flavor = opts[:flavor] || opts[:flavour]
+    flag_style = opts[:flags]
+    run_steps = opts[:run_steps]
 
-    req =
-      if run_steps? do
-        run_steps(req)
-      else
-        req
-      end
+    available_steps = step_names(req, run_steps)
+    req = run_steps(req, available_steps)
 
     cookies =
       case Map.get(req.headers, "cookie") do
@@ -124,10 +153,7 @@ defmodule CurlReq do
 
         # avoids duplicate compression argument
         %{compressed: true} ->
-          if run_steps?, do: [], else: [compressed_flag()]
-
-        %{auth: {:basic, credentials}} ->
-          [user_flag(flag_style), credentials] ++ [basic_auth_flag()]
+          if :compressed in available_steps, do: [], else: [compressed_flag()]
 
         %{connect_options: connect_options} ->
           proxy =
@@ -151,6 +177,29 @@ defmodule CurlReq do
           []
       end
 
+    auth =
+      with %{auth: scheme} <- req.options do
+        case scheme do
+          {:bearer, token} ->
+            [header_flag(flag_style), "authorization: Bearer #{token}"]
+
+          {:basic, userinfo} ->
+            [user_flag(flag_style), userinfo] ++ [basic_auth_flag()]
+
+          :netrc ->
+            [netrc_flag(flag_style)]
+
+          {:netrc, filepath} ->
+            [netrc_file_flag(flag_style), filepath]
+
+          _ ->
+            []
+        end
+      else
+        _ ->
+          []
+      end
+
     method =
       case req.method do
         nil -> [request_flag(flag_style), "GET"]
@@ -162,7 +211,7 @@ defmodule CurlReq do
 
     CurlReq.Shell.cmd_to_string(
       "curl",
-      headers ++ cookies ++ body ++ options ++ method ++ url
+      auth ++ headers ++ cookies ++ body ++ options ++ method ++ url
     )
   end
 
@@ -173,8 +222,8 @@ defmodule CurlReq do
     [compressed_flag()]
   end
 
-  # filter out basic auth header because we expect it to be set as an auth step option
-  defp map_header({"authorization", ["Basic " <> _credentials]}, _flag_style, :curl),
+  # filter out auth header because we expect it to be set as an auth step option
+  defp map_header({"authorization", _}, _flag_style, :curl),
     do: []
 
   # filter out user agent when mode is :curl
@@ -213,6 +262,11 @@ defmodule CurlReq do
 
   defp proxy_user_flag(:short), do: "-U"
   defp proxy_user_flag(:long), do: "--proxy-user"
+
+  defp netrc_flag(:short), do: "-n"
+  defp netrc_flag(:long), do: "--netrc"
+
+  defp netrc_file_flag(_), do: "--netrc-file"
 
   @doc """
   Transforms a curl command into a Req request.

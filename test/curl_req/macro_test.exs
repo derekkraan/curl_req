@@ -134,7 +134,7 @@ defmodule CurlReq.MacroTest do
                }
     end
 
-    test "auth" do
+    test "basic auth" do
       assert ~CURL(curl http://example.com -u user:pass) ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
@@ -168,6 +168,30 @@ defmodule CurlReq.MacroTest do
                  current_request_steps: [:auth],
                  request_steps: [auth: &Req.Steps.auth/1],
                  response_steps: [redirect: &Req.Steps.redirect/1]
+               }
+    end
+
+    test "netrc auth" do
+      assert ~CURL(curl http://example.com -n) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 body: nil,
+                 registered_options: MapSet.new([:auth]),
+                 options: %{auth: :netrc},
+                 current_request_steps: [:auth],
+                 request_steps: [auth: &Req.Steps.auth/1]
+               }
+    end
+
+    test "netrc file auth" do
+      assert ~CURL(curl http://example.com --netrc-file "./mynetrc") ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 body: nil,
+                 registered_options: MapSet.new([:auth]),
+                 options: %{auth: {:netrc, "./mynetrc"}},
+                 current_request_steps: [:auth],
+                 request_steps: [auth: &Req.Steps.auth/1]
                }
     end
 
