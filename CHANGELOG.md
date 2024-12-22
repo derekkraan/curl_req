@@ -3,6 +3,8 @@
 ## 0.98.7
 
 - Add new supported flags: `--proxy` and `--proxy-user`
+- Add more supported auth steps: `netrc` and `netrc_file`
+- Add option to exclude `req` steps to run when generating the cURL command
 
 ## 0.98.6
 - Handle `--data-raw` and `--data-ascii` ([#16](https://github.com/derekkraan/curl_req/pull/16))
