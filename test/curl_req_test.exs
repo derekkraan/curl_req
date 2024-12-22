@@ -85,12 +85,6 @@ defmodule CurlReqTest do
                |> CurlReq.to_curl(flavor: :req)
     end
 
-    test "basic auth option" do
-      assert "curl -u user:pass --basic --compressed -X GET https://example.com" ==
-               Req.new(url: "https://example.com", auth: {:basic, "user:pass"})
-               |> CurlReq.to_curl()
-    end
-
     test "proxy" do
       assert ~S(curl --compressed -x "http://my.proxy.com:80" -X GET https://example.com) ==
                Req.new(
@@ -114,8 +108,14 @@ defmodule CurlReqTest do
                |> CurlReq.to_curl()
     end
 
+    test "basic auth option" do
+      assert "curl -u user:pass --basic --compressed -X GET https://example.com" ==
+               Req.new(url: "https://example.com", auth: {:basic, "user:pass"})
+               |> CurlReq.to_curl()
+    end
+
     test "bearer auth option" do
-      assert ~S(curl --compressed -H "authorization: Bearer foo123bar" -X GET https://example.com) ==
+      assert ~S(curl -H "authorization: Bearer foo123bar" --compressed -X GET https://example.com) ==
                Req.new(url: "https://example.com", auth: {:bearer, "foo123bar"})
                |> CurlReq.to_curl()
     end

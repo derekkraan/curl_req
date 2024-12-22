@@ -180,8 +180,11 @@ defmodule CurlReq do
     auth =
       with %{auth: scheme} <- req.options do
         case scheme do
-          {:basic, value} ->
-            [user_flag(flag_style), value] ++ [basic_auth_flag()]
+          {:bearer, token} ->
+            [header_flag(flag_style), "authorization: Bearer #{token}"]
+
+          {:basic, userinfo} ->
+            [user_flag(flag_style), userinfo] ++ [basic_auth_flag()]
 
           :netrc ->
             [netrc_flag(flag_style)]
@@ -219,8 +222,8 @@ defmodule CurlReq do
     [compressed_flag()]
   end
 
-  # filter out basic auth header because we expect it to be set as an auth step option
-  defp map_header({"authorization", ["Basic " <> _credentials]}, _flag_style, :curl),
+  # filter out auth header because we expect it to be set as an auth step option
+  defp map_header({"authorization", _}, _flag_style, :curl),
     do: []
 
   # filter out user agent when mode is :curl
