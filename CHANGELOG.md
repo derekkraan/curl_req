@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.99.1
+
 ## 0.99.0
 
 - Add new supported flags: `--proxy` and `--proxy-user` ([#26](https://github.com/derekkraan/curl_req/pull/26))
