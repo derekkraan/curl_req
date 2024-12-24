@@ -169,7 +169,7 @@ defmodule CurlReq.Curl do
           request
 
         userinfo ->
-          CurlReq.Request.put_auth(request, :basic, userinfo)
+          CurlReq.Request.put_auth(request, {:basic, userinfo})
       end
 
     request =
@@ -186,7 +186,7 @@ defmodule CurlReq.Curl do
         request
 
       path ->
-        CurlReq.Request.put_auth(request, :netrc, path)
+        CurlReq.Request.put_auth(request, {:netrc, path})
     end
   end
 

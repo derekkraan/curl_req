@@ -229,21 +229,6 @@ defmodule CurlReq.Request do
   end
 
   @doc """
-  Puts authorization into the CurlReq.Request struct
-
-  ## Examples
-
-      iex> request = %CurlReq.Request{} |> CurlReq.Request.put_auth(:bearer, "foobar")
-      iex> request.auth
-      {:bearer, "foobar"}
-  """
-  @spec put_auth(__MODULE__.t(), :bearer | :basic | :netrc, String.t()) :: __MODULE__.t()
-  def put_auth(%__MODULE__{} = request, type, credentials)
-      when type in [:netrc, :basic, :bearer] do
-    %{request | auth: {type, credentials}}
-  end
-
-  @doc """
   Puts the url into the CurlReq.Request struct,
   It either accepts a binary or an URI struct
 
