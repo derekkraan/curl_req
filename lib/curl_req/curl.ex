@@ -9,8 +9,7 @@ defmodule CurlReq.Curl do
       command
       |> String.trim()
       |> String.trim_leading("curl")
-      |> String.replace("\\\n", " ")
-      |> String.replace("\n", " ")
+      |> CurlReq.Shell.remove_newlines()
 
     {options, rest, invalid} =
       command
@@ -243,9 +242,11 @@ defmodule CurlReq.Curl do
   @impl CurlReq.Request
   @spec encode(CurlReq.Request.t(), Keyword.t()) :: String.t()
   def encode(%CurlReq.Request{} = request, options \\ []) do
-    flag_style = Keyword.get(options, :flags, :short)
-    # TODO: implement flavor
-    _flavor = Keyword.get(options, :flavor, nil) || Keyword.get(options, :flavour, :curl)
+    options =
+      Keyword.validate!(options, flags: :short, flavor: :curl)
+
+    flag_style = options[:flags]
+    flavor = options[:flavor]
 
     cookies =
       if map_size(request.cookies) != 0 do
@@ -276,7 +277,11 @@ defmodule CurlReq.Curl do
           headers ++ [header_flag(flag_style, "content-type: application/x-www-form-urlencoded")]
       end
 
-    headers = Enum.intersperse(headers, " ")
+    headers =
+      case flavor do
+        :curl -> headers
+        :req -> headers ++ header_flag(flag_style, ["user-agent: req/", CurlReq.req_version()])
+      end
 
     body =
       emit_if(request.body, fn ->
@@ -287,7 +292,19 @@ defmodule CurlReq.Curl do
       end)
 
     redirect = emit_if(request.redirect, [location_flag(flag_style)])
-    compressed = emit_if(request.compression != :none, [compressed_flag(flag_style)])
+
+    compressed =
+      emit_if(request.compression != :none, fn ->
+        case flavor do
+          :curl ->
+            [compressed_flag(flag_style)]
+
+          :req ->
+            [
+              header_flag(flag_style, ["accept-encoding: ", Atom.to_string(request.compression)])
+            ]
+        end
+      end)
 
     auth =
       case request.auth do
@@ -327,25 +344,21 @@ defmodule CurlReq.Curl do
         _ -> []
       end
 
-    url = [to_string(request.url)]
+    url = [" ", to_string(request.url)]
 
-    IO.iodata_to_binary(
-      [
-        "curl",
-        compressed,
-        auth,
-        headers,
-        cookies,
-        body,
-        proxy,
-        proxy_auth,
-        redirect,
-        method,
-        url
-      ]
-      |> Enum.reject(fn part -> part == [] end)
-      |> Enum.intersperse(" ")
-    )
+    IO.iodata_to_binary([
+      "curl",
+      compressed,
+      auth,
+      headers,
+      cookies,
+      body,
+      proxy,
+      proxy_auth,
+      redirect,
+      method,
+      url
+    ])
   end
 
   defp emit_if(bool, fun) when is_function(fun) do
@@ -364,37 +377,37 @@ defmodule CurlReq.Curl do
     CurlReq.Shell.escape(value)
   end
 
-  defp cookie_flag(:short, value), do: ["-b ", escape(value)]
-  defp cookie_flag(:long, value), do: ["--cookie ", escape(value)]
+  defp cookie_flag(:short, value), do: [" -b ", escape(value)]
+  defp cookie_flag(:long, value), do: [" --cookie ", escape(value)]
 
-  defp header_flag(:short, value), do: ["-H ", escape(value)]
-  defp header_flag(:long, value), do: ["--header ", escape(value)]
+  defp header_flag(:short, value), do: [" -H ", escape(value)]
+  defp header_flag(:long, value), do: [" --header ", escape(value)]
 
-  defp data_flag(:short, value), do: ["-d ", escape(value)]
-  defp data_flag(:long, value), do: ["--data ", escape(value)]
+  defp data_flag(:short, value), do: [" -d ", escape(value)]
+  defp data_flag(:long, value), do: [" --data ", escape(value)]
 
-  defp head_flag(:short), do: "-I"
-  defp head_flag(:long), do: "--head"
+  defp head_flag(:short), do: " -I"
+  defp head_flag(:long), do: " --head"
 
-  defp request_flag(:short, value), do: ["-X ", escape(value)]
-  defp request_flag(:long, value), do: ["--request ", escape(value)]
+  defp request_flag(:short, value), do: [" -X ", escape(value)]
+  defp request_flag(:long, value), do: [" --request ", escape(value)]
 
-  defp location_flag(:short), do: "-L"
-  defp location_flag(:long), do: "--location"
+  defp location_flag(:short), do: " -L"
+  defp location_flag(:long), do: " --location"
 
-  defp user_flag(:short, value), do: ["-u ", escape(value)]
-  defp user_flag(:long, value), do: ["--user ", escape(value)]
+  defp user_flag(:short, value), do: [" -u ", escape(value)]
+  defp user_flag(:long, value), do: [" --user ", escape(value)]
 
-  defp netrc_flag(:short), do: "-n"
-  defp netrc_flag(:long), do: "--netrc"
+  defp netrc_flag(:short), do: " -n"
+  defp netrc_flag(:long), do: " --netrc"
 
-  defp netrc_file_flag(_, value), do: ["--netrc-file ", escape(value)]
+  defp netrc_file_flag(_, value), do: [" --netrc-file ", escape(value)]
 
-  defp compressed_flag(_), do: "--compressed"
+  defp compressed_flag(_), do: " --compressed"
 
-  defp proxy_flag(:short, value), do: ["-x ", escape(value)]
-  defp proxy_flag(:long, value), do: ["--proxy ", escape(value)]
+  defp proxy_flag(:short, value), do: [" -x ", escape(value)]
+  defp proxy_flag(:long, value), do: [" --proxy ", escape(value)]
 
-  defp proxy_user_flag(:short, value), do: ["-U ", escape(value)]
-  defp proxy_user_flag(:long, value), do: ["--proxy-user ", escape(value)]
+  defp proxy_user_flag(:short, value), do: [" -U ", escape(value)]
+  defp proxy_user_flag(:long, value), do: [" --proxy-user ", escape(value)]
 end

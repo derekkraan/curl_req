@@ -85,6 +85,7 @@ defmodule CurlReq do
   * `-u`/`--user`
   * `-n`/`--netrc`
   * `--netrc-file`
+  * `--compressed`
 
   Options:
 
@@ -124,15 +125,17 @@ defmodule CurlReq do
     options =
       Keyword.validate!(options, flags: :short, run_steps: true, flavor: nil, flavour: :curl)
 
-    # flavor = opts[:flavor] || opts[:flavour]
-    # flag_style = opts[:flags]
+    flavor = options[:flavor] || options[:flavour]
+    flags = options[:flags]
     run_steps = options[:run_steps]
 
     available_steps = step_names(req, run_steps)
     req = run_steps(req, available_steps)
 
+    curl_options = [flavor: flavor, flags: flags]
+
     CurlReq.Req.decode(req)
-    |> CurlReq.Curl.encode(options)
+    |> CurlReq.Curl.encode(curl_options)
   end
 
   @doc """
@@ -150,6 +153,8 @@ defmodule CurlReq do
   * `-u`/`--user`
   * `-x`/`--proxy`
   * `-U`/`--proxy-user`
+  * `-n`/`--netrc`
+  * `--netrc_file`
   * `--compressed`
 
   The `curl` command prefix is optional
