@@ -12,20 +12,7 @@ defmodule CurlReq.Shell do
     {~S(~), ~S(\~)}
   ]
 
-  @doc """
-  This function takes the same arguments as `System.cmd/3`, but returns
-  the command in string form instead of running the command.
-  """
   @no_quotes ~r/^[a-zA-Z-,._+:@%\/]*$/
-  def cmd_to_string(cmd, args) do
-    final_args =
-      args
-      |> Enum.map(&IO.iodata_to_binary/1)
-      |> Enum.map(&escape/1)
-      |> Enum.join(" ")
-
-    "#{cmd} #{final_args}" |> String.trim_trailing()
-  end
 
   @doc ~S"""
   Examples:

@@ -287,7 +287,7 @@ defmodule CurlReq.Request do
 
       iex> request = %CurlReq.Request{} |> CurlReq.Request.put_proxy("https://example.com")
       iex> request.url
-      URI.parse("https://example.com")
+      URI.new!("https://example.com")
   """
   @spec put_proxy(__MODULE__.t(), URI.t() | String.t()) :: __MODULE__.t()
   def put_proxy(%__MODULE__{} = request, uri) do
