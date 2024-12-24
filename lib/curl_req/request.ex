@@ -223,6 +223,10 @@ defmodule CurlReq.Request do
     %{request | auth: :netrc}
   end
 
+  def put_auth(%__MODULE__{} = request, {_type, nil}) do
+    request
+  end
+
   def put_auth(%__MODULE__{} = request, {type, credentials})
       when type in [:netrc, :basic, :bearer] do
     %{request | auth: {type, credentials}}
@@ -310,6 +314,8 @@ defmodule CurlReq.Request do
       :post
   """
   @spec put_method(__MODULE__.t(), method() | String.t()) :: __MODULE__.t()
+  def put_method(%__MODULE__{} = request, nil), do: request
+
   def put_method(%__MODULE__{} = request, method)
       when method in [:get, :head, :put, :post, :delete, :patch] do
     %{request | method: method}

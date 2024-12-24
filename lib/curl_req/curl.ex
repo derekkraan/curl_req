@@ -99,14 +99,7 @@ defmodule CurlReq.Curl do
   end
 
   defp add_method(request, options) do
-    method =
-      if Keyword.get(options, :head, false) do
-        :head
-      else
-        Keyword.get(options, :request, "GET")
-      end
-
-    CurlReq.Request.put_method(request, method)
+    CurlReq.Request.put_method(request, (options[:head] && :head) || options[:request])
   end
 
   defp add_body(request, options) do
@@ -163,41 +156,14 @@ defmodule CurlReq.Curl do
   end
 
   defp add_auth(request, options) do
-    request =
-      case Keyword.get(options, :user) do
-        nil ->
-          request
-
-        userinfo ->
-          CurlReq.Request.put_auth(request, {:basic, userinfo})
-      end
-
-    request =
-      case Keyword.get(options, :netrc) do
-        nil ->
-          request
-
-        _ ->
-          CurlReq.Request.put_auth(request, :netrc)
-      end
-
-    case Keyword.get(options, :netrc_file) do
-      nil ->
-        request
-
-      path ->
-        CurlReq.Request.put_auth(request, {:netrc, path})
-    end
+    request
+    |> CurlReq.Request.put_auth({:basic, options[:user]})
+    |> CurlReq.Request.put_auth(options[:netrct])
+    |> CurlReq.Request.put_auth({:netrc, options[:netrc_file]})
   end
 
   defp add_compression(request, options) do
-    case Keyword.get(options, :compressed) do
-      nil ->
-        request
-
-      bool ->
-        CurlReq.Request.put_compression(request, bool)
-    end
+    CurlReq.Request.put_compression(request, options[:compressed])
   end
 
   defp add_proxy(request, options) do
@@ -233,10 +199,7 @@ defmodule CurlReq.Curl do
   end
 
   defp configure_redirects(request, options) do
-    case Keyword.get(options, :location) do
-      nil -> request
-      bool -> CurlReq.Request.put_redirect(request, bool)
-    end
+    CurlReq.Request.put_redirect(request, options[:location])
   end
 
   @impl CurlReq.Request
