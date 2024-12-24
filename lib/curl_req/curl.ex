@@ -1,5 +1,8 @@
 defmodule CurlReq.Curl do
-  # TODO: docs
+  @moduledoc """
+  Implements the CurlReq.Request behaviour for a cURL command string
+  """
+
   @behaviour CurlReq.Request
 
   @impl CurlReq.Request
