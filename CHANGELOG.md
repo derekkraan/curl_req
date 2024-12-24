@@ -1,13 +1,17 @@
 # Changelog
 
-## 0.99.1
+## 0.100.0
+
+- Switch some flag positions in the generated cURL command
+- Some bugfixes regarding the constructed Req.Request struct when multiple request steps have to be set
+- [BREAKING]: From cURL to Req the body gets encoded in the specified encoding and set in the correct Req option
 
 ## 0.99.0
 
 - Add new supported flags: `--proxy` and `--proxy-user` ([#26](https://github.com/derekkraan/curl_req/pull/26))
 - Add more supported auth steps: `netrc` and `netrc_file` ([#19](https://github.com/derekkraan/curl_req/pull/19))
 - Add option to exclude `req` steps to run when generating the cURL command
-- [BREAKING] Raise on unrecognized `curl` flags ([#27](https://github.com/derekkraan/curl_req/pull/27))
+- Raise on unrecognized `curl` flags ([#27](https://github.com/derekkraan/curl_req/pull/27))
 
 ## 0.98.6
 - Handle `--data-raw` and `--data-ascii` ([#16](https://github.com/derekkraan/curl_req/pull/16))
