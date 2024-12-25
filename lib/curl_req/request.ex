@@ -22,7 +22,8 @@ defmodule CurlReq.Request do
           proxy_auth: auth(),
           auth: auth(),
           encoding: encoding(),
-          body: term()
+          body: term(),
+          raw_body: term()
         }
 
   @type user_agent() :: :curl | :req | String.t()
@@ -47,7 +48,8 @@ defmodule CurlReq.Request do
             proxy_auth: :none,
             auth: :none,
             encoding: :raw,
-            body: nil
+            body: nil,
+            raw_body: nil
 
   @doc """
   Puts the header into the CurlReq.Request struct. Special headers like encoding, authorization or user-agent are stored in their respective field in the #{__MODULE__} struct instead of a general header.
@@ -148,22 +150,22 @@ defmodule CurlReq.Request do
   @spec put_body(__MODULE__.t(), term()) :: __MODULE__.t()
   def put_body(%__MODULE__{} = request, nil), do: request
 
-  def put_body(%__MODULE__{} = request, body) do
+  def put_body(%__MODULE__{} = request, input) do
     body =
       case request.encoding do
         :json ->
-          with true <- is_binary(body) or is_list(body),
-               {:ok, json} <- Jason.decode(body) do
+          with true <- is_binary(input) or is_list(input),
+               {:ok, json} <- Jason.decode(input) do
             json
           else
-            _ -> body
+            _ -> input
           end
 
         _ ->
-          body
+          input
       end
 
-    %{request | body: body}
+    %{request | body: body, raw_body: input}
   end
 
   @doc """
@@ -183,22 +185,33 @@ defmodule CurlReq.Request do
       iex> request = %CurlReq.Request{} |> CurlReq.Request.put_encoding(:raw)
       iex> request.encoding
       :raw
+
+      iex> request = %CurlReq.Request{} 
+      ...> |> CurlReq.Request.put_body(~S|{"foo": "bar"}|) 
+      ...> |> CurlReq.Request.put_encoding(:json)
+      iex> request.encoding
+      :json
+      iex> request.body
+      %{"foo" =>  "bar"}
+      iex> request = request |> CurlReq.Request.put_encoding(:raw)
+      iex> request.body
+      ~S|{"foo": "bar"}|
   """
   @spec put_encoding(__MODULE__.t(), encoding()) :: __MODULE__.t()
-  def put_encoding(%__MODULE__{body: body} = request, encoding)
+  def put_encoding(%__MODULE__{raw_body: raw_body} = request, encoding)
       when encoding in [:raw, :json, :form] do
     body =
       case encoding do
         :json ->
-          with true <- is_binary(body) or is_list(body),
-               {:ok, json} <- Jason.decode(body) do
+          with true <- is_binary(raw_body) or is_list(raw_body),
+               {:ok, json} <- Jason.decode(raw_body) do
             json
           else
-            _ -> body
+            _ -> raw_body
           end
 
         _ ->
-          body
+          raw_body
       end
 
     %{request | body: body, encoding: encoding}
