@@ -33,7 +33,8 @@ defmodule CurlReq.Curl do
           proxy: :string,
           proxy_user: :string,
           netrc: :boolean,
-          netrc_file: :string
+          netrc_file: :string,
+          insecure: :boolean
         ],
         aliases: [
           H: :header,
@@ -46,7 +47,8 @@ defmodule CurlReq.Curl do
           u: :user,
           x: :proxy,
           U: :proxy_user,
-          n: :netrc
+          n: :netrc,
+          k: :insecure
         ]
       )
 
@@ -85,6 +87,7 @@ defmodule CurlReq.Curl do
     |> add_auth(options)
     |> add_compression(options)
     |> add_proxy(options)
+    |> add_insecure(options)
     |> configure_redirects(options)
   end
 
@@ -201,6 +204,10 @@ defmodule CurlReq.Curl do
     end
   end
 
+  defp add_insecure(request, options) do
+    CurlReq.Request.put_insecure(request, options[:insecure])
+  end
+
   defp configure_redirects(request, options) do
     CurlReq.Request.put_redirect(request, options[:location])
   end
@@ -310,11 +317,14 @@ defmodule CurlReq.Curl do
         _ -> []
       end
 
+    insecure = if request.insecure, do: [insecure_flag(flag_style)], else: []
+
     url = [" ", to_string(request.url)]
 
     IO.iodata_to_binary([
       "curl",
       compressed,
+      insecure,
       auth,
       headers,
       cookies,
@@ -376,4 +386,7 @@ defmodule CurlReq.Curl do
 
   defp proxy_user_flag(:short, value), do: [" -U ", escape(value)]
   defp proxy_user_flag(:long, value), do: [" --proxy-user ", escape(value)]
+
+  defp insecure_flag(:short), do: " -k"
+  defp insecure_flag(:long), do: " --insecure"
 end
