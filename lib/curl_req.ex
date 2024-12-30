@@ -85,6 +85,7 @@ defmodule CurlReq do
   * `-u`/`--user`
   * `-n`/`--netrc`
   * `--netrc-file`
+  * `--compressed`
 
   Options:
 
@@ -121,152 +122,21 @@ defmodule CurlReq do
         ]
   @spec to_curl(Req.Request.t(), to_curl_opts()) :: String.t()
   def to_curl(req, options \\ []) do
-    opts = Keyword.validate!(options, flags: :short, run_steps: true, flavor: nil, flavour: :curl)
-    flavor = opts[:flavor] || opts[:flavour]
-    flag_style = opts[:flags]
-    run_steps = opts[:run_steps]
+    options =
+      Keyword.validate!(options, flags: :short, run_steps: true, flavor: nil, flavour: :curl)
+
+    flavor = options[:flavor] || options[:flavour]
+    flags = options[:flags]
+    run_steps = options[:run_steps]
 
     available_steps = step_names(req, run_steps)
     req = run_steps(req, available_steps)
 
-    cookies =
-      case Map.get(req.headers, "cookie") do
-        nil -> []
-        [cookies] -> [cookie_flag(flag_style), cookies]
-      end
+    curl_options = [flavor: flavor, flags: flags]
 
-    headers =
-      req.headers
-      |> Enum.reject(fn {key, _val} -> key == "cookie" end)
-      |> Enum.flat_map(&map_header(&1, flag_style, flavor))
-
-    body =
-      case req.body do
-        nil -> []
-        body -> [data_flag(flag_style), body]
-      end
-
-    options =
-      case req.options do
-        %{redirect: true} ->
-          [location_flag(flag_style)]
-
-        # avoids duplicate compression argument
-        %{compressed: true} ->
-          if :compressed in available_steps, do: [], else: [compressed_flag()]
-
-        %{connect_options: connect_options} ->
-          proxy =
-            case Keyword.get(connect_options, :proxy) do
-              nil ->
-                []
-
-              {scheme, host, port, _} ->
-                [proxy_flag(flag_style), "#{scheme}://#{host}:#{port}"]
-            end
-
-          case Keyword.get(connect_options, :proxy_headers) do
-            [{"proxy-authorization", "Basic " <> encoded_creds}] ->
-              proxy ++ [proxy_user_flag(flag_style), Base.decode64!(encoded_creds)]
-
-            _ ->
-              proxy
-          end
-
-        _ ->
-          []
-      end
-
-    auth =
-      with %{auth: scheme} <- req.options do
-        case scheme do
-          {:bearer, token} ->
-            [header_flag(flag_style), "authorization: Bearer #{token}"]
-
-          {:basic, userinfo} ->
-            [user_flag(flag_style), userinfo] ++ [basic_auth_flag()]
-
-          :netrc ->
-            [netrc_flag(flag_style)]
-
-          {:netrc, filepath} ->
-            [netrc_file_flag(flag_style), filepath]
-
-          _ ->
-            []
-        end
-      else
-        _ ->
-          []
-      end
-
-    method =
-      case req.method do
-        nil -> [request_flag(flag_style), "GET"]
-        :head -> [head_flag(flag_style)]
-        m -> [request_flag(flag_style), String.upcase(to_string(m))]
-      end
-
-    url = [to_string(req.url)]
-
-    CurlReq.Shell.cmd_to_string(
-      "curl",
-      auth ++ headers ++ cookies ++ body ++ options ++ method ++ url
-    )
+    CurlReq.Req.decode(req)
+    |> CurlReq.Curl.encode(curl_options)
   end
-
-  @typep header :: {String.t(), list(String.t())}
-  @spec map_header(header(), flags(), flavor()) :: list()
-  defp map_header({"accept-encoding", [compression]}, _flag_style, :curl)
-       when compression in ["gzip", "br", "zstd"] do
-    [compressed_flag()]
-  end
-
-  # filter out auth header because we expect it to be set as an auth step option
-  defp map_header({"authorization", _}, _flag_style, :curl),
-    do: []
-
-  # filter out user agent when mode is :curl
-  defp map_header({"user-agent", ["req/" <> _]}, _, :curl), do: []
-
-  defp map_header({key, value}, flag_style, _),
-    do: [header_flag(flag_style), "#{key}: #{value}"]
-
-  defp cookie_flag(:short), do: "-b"
-  defp cookie_flag(:long), do: "--cookie"
-
-  defp header_flag(:short), do: "-H"
-  defp header_flag(:long), do: "--header"
-
-  defp data_flag(:short), do: "-d"
-  defp data_flag(:long), do: "--data"
-
-  defp head_flag(:short), do: "-I"
-  defp head_flag(:long), do: "--head"
-
-  defp request_flag(:short), do: "-X"
-  defp request_flag(:long), do: "--request"
-
-  defp location_flag(:short), do: "-L"
-  defp location_flag(:long), do: "--location"
-
-  defp user_flag(:short), do: "-u"
-  defp user_flag(:long), do: "--user"
-
-  defp basic_auth_flag(), do: "--basic"
-
-  defp compressed_flag(), do: "--compressed"
-
-  defp proxy_flag(:short), do: "-x"
-  defp proxy_flag(:long), do: "--proxy"
-
-  defp proxy_user_flag(:short), do: "-U"
-  defp proxy_user_flag(:long), do: "--proxy-user"
-
-  defp netrc_flag(:short), do: "-n"
-  defp netrc_flag(:long), do: "--netrc"
-
-  defp netrc_file_flag(_), do: "--netrc-file"
 
   @doc """
   Transforms a curl command into a Req request.
@@ -283,6 +153,8 @@ defmodule CurlReq do
   * `-u`/`--user`
   * `-x`/`--proxy`
   * `-U`/`--proxy-user`
+  * `-n`/`--netrc`
+  * `--netrc_file`
   * `--compressed`
 
   The `curl` command prefix is optional
@@ -308,7 +180,11 @@ defmodule CurlReq do
   @doc since: "0.98.4"
 
   @spec from_curl(String.t()) :: Req.Request.t()
-  def from_curl(curl_command), do: CurlReq.Macro.parse(curl_command)
+  def from_curl(curl_command) do
+    curl_command
+    |> CurlReq.Curl.decode()
+    |> CurlReq.Req.encode()
+  end
 
   @doc """
   Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string
@@ -335,7 +211,7 @@ defmodule CurlReq do
 
   defmacro sigil_CURL({:<<>>, _line_info, [command]}, _extra) do
     command
-    |> CurlReq.Macro.parse()
+    |> from_curl()
     |> Macro.escape()
   end
 end

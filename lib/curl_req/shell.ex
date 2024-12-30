@@ -12,28 +12,18 @@ defmodule CurlReq.Shell do
     {~S(~), ~S(\~)}
   ]
 
-  @doc """
-  This function takes the same arguments as `System.cmd/3`, but returns
-  the command in string form instead of running the command.
-  """
   @no_quotes ~r/^[a-zA-Z-,._+:@%\/]*$/
-  def cmd_to_string(cmd, args) do
-    final_args =
-      args
-      |> Enum.map(&IO.iodata_to_binary/1)
-      |> Enum.map(&escape/1)
-      |> Enum.join(" ")
-
-    "#{cmd} #{final_args}" |> String.trim_trailing()
-  end
 
   @doc ~S"""
-  Examples:
-    iex> CurlReq.Shell.escape(~s(abc def))
-    ~s("abc def")
+  Escapes the value into a shell representable version
 
-    iex> CurlReq.Shell.escape(~s({"json":"is_cool"}))
-    ~S("{\"json\":\"is_cool\"}")
+  ## Examples
+
+      iex> CurlReq.Shell.escape(~s(abc def))
+      ~s("abc def")
+
+      iex> CurlReq.Shell.escape(~s({"json":"is_cool"}))
+      ~S("{\"json\":\"is_cool\"}")
   """
   def escape(arg) do
     if String.match?(arg, @no_quotes) do
@@ -46,5 +36,25 @@ defmodule CurlReq.Shell do
 
       ~s("#{arg}")
     end
+  end
+
+  @doc """
+  Removes newlines from the input string
+
+  ## Examples
+
+      iex> \"""
+      ...> curl
+      ...> -X GET example.com
+      ...> \"""
+      ...> |> CurlReq.Shell.remove_newlines()
+      "curl -X GET example.com"
+  """
+  def remove_newlines(input) when is_binary(input) do
+    input
+    |> String.replace("\\\n", " ")
+    |> String.replace("\n", " ")
+    |> String.replace("\r", "")
+    |> String.trim()
   end
 end
