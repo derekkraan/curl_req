@@ -220,7 +220,6 @@ defmodule CurlReqTest do
       assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://example.com/fact) ==
                %Req.Request{
                  method: :get,
-                 headers: %{"user-agent" => ["req/0.4.14"]},
                  url: URI.parse("https://example.com/fact")
                }
     end
@@ -246,9 +245,6 @@ defmodule CurlReqTest do
                %Req.Request{
                  method: :post,
                  url: URI.parse("https://example.com/rest/v1/leads/submitForm.json"),
-                 headers: %{
-                   "user-agent" => ["req/0.4.14"]
-                 },
                  registered_options: MapSet.new([:compressed, :auth, :json]),
                  options: %{
                    compressed: true,

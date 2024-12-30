@@ -419,6 +419,10 @@ defmodule CurlReq.Request do
   @spec put_redirect(__MODULE__.t(), :req | :curl | String.t()) :: __MODULE__.t()
   def put_user_agent(%__MODULE{} = request, nil), do: request
 
+  def put_user_agent(%__MODULE{} = request, "req/" <> _) do
+    %{request | user_agent: :req}
+  end
+
   def put_user_agent(%__MODULE{} = request, user_agent)
       when user_agent in [:curl, :req] or is_binary(user_agent) do
     %{request | user_agent: user_agent}
