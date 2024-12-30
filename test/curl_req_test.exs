@@ -82,7 +82,7 @@ defmodule CurlReqTest do
     end
 
     test "req flavor with explicit headers" do
-      assert ~s|curl -H "accept-encoding: gzip" -H "user-agent: req/#{req_version()}" -X GET https://example.com| ==
+      assert ~s|curl -H "accept-encoding: gzip" -A "req/#{req_version()}" -X GET https://example.com| ==
                Req.new(url: "https://example.com")
                |> CurlReq.to_curl(flavor: :req)
     end
@@ -196,6 +196,22 @@ defmodule CurlReqTest do
                  }
                }
                |> CurlReq.to_curl()
+    end
+
+    test "user agent flag" do
+      assert ~s(curl --compressed -A "some_user_agent/0.1.0" -X GET http://example.com) ==
+               Req.new(
+                 url: "http://example.com",
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+               )
+               |> CurlReq.to_curl()
+
+      assert ~s(curl --compressed --user-agent "some_user_agent/0.1.0" --request GET http://example.com) ==
+               Req.new(
+                 url: "http://example.com",
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+               )
+               |> CurlReq.to_curl(flags: :long)
     end
   end
 
@@ -513,6 +529,20 @@ defmodule CurlReqTest do
                      transport_opts: [verify: :verify_none]
                    ]
                  }
+               }
+    end
+
+    test "user agent flag" do
+      assert ~CURL(curl -A "some_user_agent/0.1.0" http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+               }
+
+      assert ~CURL(curl --user-agent "some_user_agent/0.1.0" http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
                }
     end
   end

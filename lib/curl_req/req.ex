@@ -10,11 +10,11 @@ defmodule CurlReq.Req do
   def decode(%Req.Request{} = req, _opts \\ []) do
     request =
       %CurlReq.Request{}
+      |> CurlReq.Request.put_user_agent(:req)
       |> put_header(req)
       |> CurlReq.Request.put_auth(req.options[:auth])
       |> CurlReq.Request.put_redirect(req.options[:redirect])
       |> CurlReq.Request.put_compression(req.options[:compressed])
-      |> CurlReq.Request.put_user_agent(:req)
       |> CurlReq.Request.put_body(req.body)
       |> CurlReq.Request.put_url(req.url)
       |> CurlReq.Request.put_method(req.method)
