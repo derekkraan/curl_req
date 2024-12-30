@@ -11,7 +11,7 @@ defmodule CurlReq.MixProject do
       package: package(),
       source_url: "https://github.com/derekkraan/curl_req",
       start_permanent: Mix.env() == :prod,
-      version: "0.99.0"
+      version: "0.100.0"
     ]
   end
 
