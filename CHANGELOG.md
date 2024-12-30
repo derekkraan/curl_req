@@ -5,6 +5,7 @@
 - Switch some flag positions in the generated cURL command
 - Some bugfixes regarding the constructed Req.Request struct when multiple request steps have to be set
 - [BREAKING]: From cURL to Req the body gets encoded in the specified encoding and set in the correct Req option
+- New `CurlReq.Request` module for an internal representation
 
 ## 0.99.0
 

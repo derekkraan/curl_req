@@ -168,6 +168,35 @@ defmodule CurlReqTest do
                Req.new(url: "https://example.com", json: %{key: "val"})
                |> CurlReq.to_curl(run_steps: [except: [:compressed, :encode_body]])
     end
+
+    test "insecure flag" do
+      assert ~s(curl -k -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     transport_opts: [verify: :verify_none]
+                   ]
+                 }
+               }
+               |> CurlReq.to_curl()
+    end
+
+    test "insecure flag with proxy" do
+      assert ~s(curl -k -x "http://my.proxy.com:2233" -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     proxy: {:http, "my.proxy.com", 2233, []},
+                     transport_opts: [verify: :verify_none]
+                   ]
+                 }
+               }
+               |> CurlReq.to_curl()
+    end
   end
 
   describe "from_curl" do
@@ -447,6 +476,44 @@ defmodule CurlReqTest do
           CurlReq.Curl.decode("curl --proxy ssh://my.proxy.com:22225 http://example.com")
         end
       )
+    end
+
+    test "insecure flag" do
+      assert ~CURL(curl -k http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     transport_opts: [verify: :verify_none]
+                   ]
+                 }
+               }
+
+      assert ~CURL(curl --insecure http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     transport_opts: [verify: :verify_none]
+                   ]
+                 }
+               }
+    end
+
+    test "insecure flag with proxy" do
+      assert ~CURL(curl -k --proxy my.proxy.com:2233 http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [
+                     proxy: {:http, "my.proxy.com", 2233, []},
+                     transport_opts: [verify: :verify_none]
+                   ]
+                 }
+               }
     end
   end
 

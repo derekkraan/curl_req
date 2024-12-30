@@ -37,6 +37,14 @@ defmodule CurlReq.Req do
                 nil
             end
 
+          request =
+            with transport_opts <- Keyword.get(connect_options, :transport_opts, []),
+                 :verify_none <- Keyword.get(transport_opts, :verify) do
+              CurlReq.Request.put_insecure(request, true)
+            else
+              _ -> request
+            end
+
           case Keyword.get(connect_options, :proxy) do
             {scheme, host, port, _} ->
               CurlReq.Request.put_proxy(request, %URI{
@@ -146,31 +154,45 @@ defmodule CurlReq.Req do
         req
       end
 
-    req =
+    proxy =
       if request.proxy do
         %URI{scheme: scheme, host: host, port: port} = request.proxy_url
 
-        connect_options =
+        [
+          proxy: {String.to_existing_atom(scheme), host, port, []}
+        ]
+      else
+        []
+      end
+
+    proxy_auth =
+      case request.proxy_auth do
+        {:basic, userinfo} ->
           [
-            proxy: {String.to_existing_atom(scheme), host, port, []}
+            proxy_headers: [
+              {"proxy-authorization", "Basic " <> Base.encode64(userinfo)}
+            ]
           ]
 
-        connect_options =
-          case request.proxy_auth do
-            :none ->
-              connect_options
+        _ ->
+          []
+      end
 
-            {:basic, userinfo} ->
-              Keyword.merge(connect_options,
-                proxy_headers: [
-                  {"proxy-authorization", "Basic " <> Base.encode64(userinfo)}
-                ]
-              )
+    transport_opts =
+      if request.insecure do
+        [transport_opts: [verify: :verify_none]]
+      else
+        []
+      end
 
-            _ ->
-              connect_options
-          end
+    connect_options =
+      []
+      |> Keyword.merge(proxy)
+      |> Keyword.merge(proxy_auth)
+      |> Keyword.merge(transport_opts)
 
+    req =
+      if connect_options != [] do
         req
         |> Req.Request.register_options([
           :connect_options

@@ -23,7 +23,8 @@ defmodule CurlReq.Request do
           auth: auth(),
           encoding: encoding(),
           body: term(),
-          raw_body: term()
+          raw_body: term(),
+          insecure: boolean()
         }
 
   @type user_agent() :: :curl | :req | String.t()
@@ -49,7 +50,8 @@ defmodule CurlReq.Request do
             auth: :none,
             encoding: :raw,
             body: nil,
-            raw_body: nil
+            raw_body: nil,
+            insecure: false
 
   @doc """
   Puts the header into the CurlReq.Request struct. Special headers like encoding, authorization or user-agent are stored in their respective field in the #{__MODULE__} struct instead of a general header.
@@ -367,6 +369,22 @@ defmodule CurlReq.Request do
 
   def put_compression(%__MODULE__{} = request, type) when type in [:gzip, :br, :zstd] do
     %{request | compression: type}
+  end
+
+  @doc """
+  Sets the insecure option in the Curl.Request struct
+
+  ## Examples
+
+      iex> request = %CurlReq.Request{} |> CurlReq.Request.put_insecure(true)
+      iex> request.insecure
+      true
+  """
+  @spec put_insecure(__MODULE__.t(), boolean() | nil) :: __MODULE__.t()
+  def put_insecure(%__MODULE__{} = request, nil), do: request
+
+  def put_insecure(%__MODULE__{} = request, insecure) when is_boolean(insecure) do
+    %{request | insecure: insecure}
   end
 
   @doc """
