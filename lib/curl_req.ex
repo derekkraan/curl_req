@@ -106,7 +106,7 @@ defmodule CurlReq do
 
       iex> Req.new(url: URI.parse("https://www.example.com"))
       ...> |> CurlReq.to_curl(flags: :long, flavor: :req)
-      ~S(curl --header "accept-encoding: gzip" --header "user-agent: req/#{@req_version}" --request GET https://www.example.com)
+      ~S(curl --header "accept-encoding: gzip" --user-agent "req/#{@req_version}" --request GET https://www.example.com)
 
       iex> Req.new(url: "https://www.example.com")
       ...> |> CurlReq.to_curl(run_steps: [except: [:compressed]])

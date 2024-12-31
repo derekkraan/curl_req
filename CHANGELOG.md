@@ -2,10 +2,12 @@
 
 ## 0.100.0
 
-- Switch some flag positions in the generated cURL command
-- Some bugfixes regarding the constructed Req.Request struct when multiple request steps have to be set
+- [BREAKING]: Switch some flag positions in the generated cURL command
+- Some bugfixes regarding the constructed `Req.Request` struct when multiple request steps have to be set
 - [BREAKING]: From cURL to Req the body gets encoded in the specified encoding and set in the correct Req option
-- New `CurlReq.Request` module for an internal representation
+- [BREAKING]: User Agent is encoded in the user agent flag (`--user-agent`/`-A`) instead of a generic header ([#32](https://github.com/derekkraan/curl_req/pull/32))
+- New `CurlReq.Request` module for an internal representation of the HTTP request ([#29](https://github.com/derekkraan/curl_req/pull/29))
+- Add new supported flag: `--insecure`/`-k` ([#31](https://github.com/derekkraan/curl_req/pull/31))
 
 ## 0.99.0
 

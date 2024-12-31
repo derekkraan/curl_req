@@ -34,7 +34,8 @@ defmodule CurlReq.Curl do
           proxy_user: :string,
           netrc: :boolean,
           netrc_file: :string,
-          insecure: :boolean
+          insecure: :boolean,
+          user_agent: :string
         ],
         aliases: [
           H: :header,
@@ -48,7 +49,8 @@ defmodule CurlReq.Curl do
           x: :proxy,
           U: :proxy_user,
           n: :netrc,
-          k: :insecure
+          k: :insecure,
+          A: :user_agent
         ]
       )
 
@@ -88,6 +90,7 @@ defmodule CurlReq.Curl do
     |> add_compression(options)
     |> add_proxy(options)
     |> add_insecure(options)
+    |> add_user_agent(options)
     |> configure_redirects(options)
   end
 
@@ -208,6 +211,10 @@ defmodule CurlReq.Curl do
     CurlReq.Request.put_insecure(request, options[:insecure])
   end
 
+  defp add_user_agent(request, options) do
+    CurlReq.Request.put_user_agent(request, options[:user_agent])
+  end
+
   defp configure_redirects(request, options) do
     CurlReq.Request.put_redirect(request, options[:location])
   end
@@ -250,10 +257,12 @@ defmodule CurlReq.Curl do
           headers ++ [header_flag(flag_style, "content-type: application/x-www-form-urlencoded")]
       end
 
-    headers =
-      case flavor do
-        :curl -> headers
-        :req -> headers ++ header_flag(flag_style, ["user-agent: req/", CurlReq.req_version()])
+    user_agent =
+      case {flavor, request.user_agent} do
+        {:curl, agent} when is_atom(agent) -> []
+        {:req, :curl} -> []
+        {:req, :req} -> [user_agent_flag(flag_style, ["req/", CurlReq.req_version()])]
+        {_, user_agent} -> [user_agent_flag(flag_style, user_agent)]
       end
 
     body =
@@ -327,6 +336,7 @@ defmodule CurlReq.Curl do
       insecure,
       auth,
       headers,
+      user_agent,
       cookies,
       body,
       proxy,
@@ -389,4 +399,7 @@ defmodule CurlReq.Curl do
 
   defp insecure_flag(:short), do: " -k"
   defp insecure_flag(:long), do: " --insecure"
+
+  defp user_agent_flag(:short, value), do: [" -A ", escape(value)]
+  defp user_agent_flag(:long, value), do: [" --user-agent ", escape(value)]
 end
