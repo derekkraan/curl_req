@@ -27,23 +27,23 @@ defmodule CurlReq.MixProject do
     [
       {:req, "~> 0.4.0 or ~> 0.5.0"},
       {:jason, "~> 1.4"},
-      {:ex_doc, ">= 0.0.0", only: :dev},
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:blend, "~> 0.4.1", only: :dev}
     ]
   end
 
   defp docs do
-    [main: "CurlReq", extras: extras()]
+    [main: "README", extras: extras()]
   end
 
-  defp extras, do: ["README.md"]
+  defp extras, do: ["README.md", "CHANGELOG.md"]
 
   defp package() do
     [
       description: "Req 💗 curl",
       licenses: ["MIT"],
       links: %{GitHub: "https://github.com/derekkraan/curl_req"},
-      maintainers: ["Derek Kraan"]
+      maintainers: ["Derek Kraan", "Kevin Schweikert"]
     ]
   end
 end

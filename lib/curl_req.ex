@@ -1,6 +1,13 @@
 defmodule CurlReq do
   @req_version :application.get_key(:req, :vsn) |> elem(1)
 
+  @flag_docs CurlReq.Curl.flags()
+             |> Enum.map(fn
+               {long, nil} -> "* `--#{long}`"
+               {long, short} -> "* `--#{long}`/`-#{short}`"
+             end)
+             |> Enum.join("\n")
+
   @doc false
   def req_version(), do: @req_version
 
@@ -65,12 +72,9 @@ defmodule CurlReq do
   @doc """
   Transforms a Req request into a curl command.
 
-  Supported curl flags are:
+  The following flags are supported:
 
-  #{Enum.map(CurlReq.Curl.flags(), fn
-    {long, nil} -> "* `#{long}`\n"
-    {long, short} -> "* `#{long}`/`#{short}`\n"
-  end)}
+  #{@flag_docs}
 
   Options:
 
@@ -126,12 +130,9 @@ defmodule CurlReq do
   @doc """
   Transforms a curl command into a Req request.
 
-  Supported curl command line flags are supported:
+  The following flags are supported:
 
-  #{Enum.map(CurlReq.Curl.flags(), fn
-    {long, nil} -> "* `#{long}`\n"
-    {long, short} -> "* `#{long}`/`#{short}`\n"
-  end)}
+  #{@flag_docs}
 
   The `curl` command prefix is optional
 
@@ -144,7 +145,7 @@ defmodule CurlReq do
       iex> CurlReq.from_curl("curl https://www.example.com")
       %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
 
-      iex> ~S(curl -d "some data" https://example.com) |> CurlReq.from_curl()
+      iex> CurlReq.from_curl(~s|curl -d "some data" https://example.com|)
       %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
 
       iex> CurlReq.from_curl("curl -I https://example.com")
@@ -163,7 +164,7 @@ defmodule CurlReq do
   end
 
   @doc """
-  Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string.
+  Same as `from_curl/1` but as a sigil. The benefit here is, that the `Req.Request` struct will be created at compile time and you don't need to escape the string.
   Remember to
 
   ```elixir

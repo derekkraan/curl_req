@@ -1,6 +1,6 @@
 defmodule CurlReq.Curl do
   @moduledoc """
-  Implements the CurlReq.Request behaviour for a cURL command string
+  Implements the `CurlReq.Request` behaviour for a cURL command string
   """
 
   @behaviour CurlReq.Request
