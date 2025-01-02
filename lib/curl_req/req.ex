@@ -1,6 +1,6 @@
 defmodule CurlReq.Req do
   @moduledoc """
-  Implements the CurlReq.Request behaviour for a Req.Request struct
+  Implements the `CurlReq.Request` behaviour for a `Req.Request` struct
   """
 
   @behaviour CurlReq.Request

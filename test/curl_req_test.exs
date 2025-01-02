@@ -1,7 +1,7 @@
 defmodule CurlReqTest do
   use ExUnit.Case, async: true
 
-  doctest CurlReq
+  doctest CurlReq, import: true
 
   import CurlReq
   import ExUnit.CaptureIO
