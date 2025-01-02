@@ -36,7 +36,7 @@ defmodule CurlReq.MixProject do
     [main: "CurlReq", extras: extras()]
   end
 
-  defp extras, do: []
+  defp extras, do: ["README.md"]
 
   defp package() do
     [

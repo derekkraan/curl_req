@@ -1,10 +1,4 @@
 defmodule CurlReq do
-  @external_resource "README.md"
-  @moduledoc @external_resource
-             |> File.read!()
-             |> String.split("<!-- MDOC !-->")
-             |> Enum.fetch!(1)
-
   @req_version :application.get_key(:req, :vsn) |> elem(1)
 
   @doc false
@@ -73,19 +67,10 @@ defmodule CurlReq do
 
   Supported curl flags are:
 
-  * `-b`/`--cookie`
-  * `-H`/`--header`
-  * `-X`/`--request`
-  * `-L`/`--location`
-  * `-I`/`--head`
-  * `-d`/`--data`/`--data-ascii`
-  * `--data-raw`
-  * `-x`/`--proxy`
-  * `-U`/`--proxy-user`
-  * `-u`/`--user`
-  * `-n`/`--netrc`
-  * `--netrc-file`
-  * `--compressed`
+  #{Enum.map(CurlReq.Curl.flags(), fn
+    {long, nil} -> "* `#{long}`\n"
+    {long, short} -> "* `#{long}`/`#{short}`\n"
+  end)}
 
   Options:
 
@@ -143,19 +128,10 @@ defmodule CurlReq do
 
   Supported curl command line flags are supported:
 
-  * `-H`/`--header`
-  * `-X`/`--request`
-  * `-d`/`--data`
-  * `-b`/`--cookie`
-  * `-I`/`--head`
-  * `-F`/`--form`
-  * `-L`/`--location`
-  * `-u`/`--user`
-  * `-x`/`--proxy`
-  * `-U`/`--proxy-user`
-  * `-n`/`--netrc`
-  * `--netrc_file`
-  * `--compressed`
+  #{Enum.map(CurlReq.Curl.flags(), fn
+    {long, nil} -> "* `#{long}`\n"
+    {long, short} -> "* `#{long}`/`#{short}`\n"
+  end)}
 
   The `curl` command prefix is optional
 
@@ -187,24 +163,27 @@ defmodule CurlReq do
   end
 
   @doc """
-  Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string
+  Same as `from_curl/1` but as a sigil. The benefit here is, that the Req.Request struct will be created at compile time and you don't need to escape the string.
+  Remember to
+
+  ```elixir
+  import CurlReq
+  ```
+
+  to use the custom sigil.
 
   ## Examples
 
-      iex> import CurlReq
-      ...> ~CURL(curl "https://www.example.com")
+      iex> ~CURL(curl "https://www.example.com")
       %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
 
-      iex> import CurlReq
-      ...> ~CURL(curl -d "some data" "https://example.com")
+      iex> ~CURL(curl -d "some data" "https://example.com")
       %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
 
-      iex> import CurlReq
-      ...> ~CURL(curl -I "https://example.com")
+      iex> ~CURL(curl -I "https://example.com")
       %Req.Request{method: :head, url: URI.parse("https://example.com")}
 
-      iex> import CurlReq
-      ...> ~CURL(curl -b "cookie_key=cookie_val" "https://example.com")
+      iex> ~CURL(curl -b "cookie_key=cookie_val" "https://example.com")
       %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
   """
   defmacro sigil_CURL(curl_command, modifiers)

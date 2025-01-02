@@ -1,6 +1,6 @@
-# 🥌 🥌 🥌 CurlReq 🥌 🥌 🥌
+# CurlReq 🥌 
 
-<!-- MDOC !-->
+🥌 🥌 🥌 🥌 🥌 🥌
 
 Req is awesome, but the world speaks curl.
 
@@ -61,7 +61,6 @@ iex> Req.new(url: "/fact", base_url: "https://example.com/")
 
 ```
 
-<!-- MDOC !-->
 
 ## Installation
 
@@ -71,7 +70,7 @@ by adding `curl_req` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:curl_req, "~> 0.98.0"}
+    {:curl_req, "~> 0.100.0"}
   ]
 end
 ```
