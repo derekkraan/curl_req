@@ -5,6 +5,71 @@ defmodule CurlReq.Curl do
 
   @behaviour CurlReq.Request
 
+  @flags [
+    header: :keep,
+    request: :string,
+    data: :keep,
+    data_raw: :keep,
+    data_ascii: :keep,
+    cookie: :string,
+    head: :boolean,
+    form: :keep,
+    location: :boolean,
+    user: :string,
+    compressed: :boolean,
+    proxy: :string,
+    proxy_user: :string,
+    netrc: :boolean,
+    netrc_file: :string,
+    insecure: :boolean,
+    user_agent: :string
+  ]
+
+  @aliases [
+    H: :header,
+    X: :request,
+    d: :data,
+    b: :cookie,
+    I: :head,
+    F: :form,
+    L: :location,
+    u: :user,
+    x: :proxy,
+    U: :proxy_user,
+    n: :netrc,
+    k: :insecure,
+    A: :user_agent
+  ]
+
+  @doc """
+  Lists supported flags for the cURL command
+
+  ## Examples
+
+      iex> flags = CurlReq.Curl.flags()
+      iex> {:header, :H} in flags
+      true
+
+      iex> flags = CurlReq.Curl.flags()
+      iex> {:compressed, nil} in flags
+      true
+
+      iex> flags = CurlReq.Curl.flags()
+      iex> {:foo, nil} in flags
+      false
+  """
+  @spec flags() :: [{atom(), atom() | nil}]
+  def flags do
+    long = Keyword.keys(@flags)
+
+    short_lookup =
+      Enum.map(@aliases, fn {short, long} -> {long, short} end) |> Enum.into(%{})
+
+    Enum.map(long, fn flag ->
+      {flag, short_lookup[flag]}
+    end)
+  end
+
   @impl CurlReq.Request
   @spec decode(String.t()) :: CurlReq.Request.t()
   def decode(command, _opts \\ []) when is_binary(command) do
@@ -18,40 +83,8 @@ defmodule CurlReq.Curl do
       command
       |> OptionParser.split()
       |> OptionParser.parse(
-        strict: [
-          header: :keep,
-          request: :string,
-          data: :keep,
-          data_raw: :keep,
-          data_ascii: :keep,
-          cookie: :string,
-          head: :boolean,
-          form: :keep,
-          location: :boolean,
-          user: :string,
-          compressed: :boolean,
-          proxy: :string,
-          proxy_user: :string,
-          netrc: :boolean,
-          netrc_file: :string,
-          insecure: :boolean,
-          user_agent: :string
-        ],
-        aliases: [
-          H: :header,
-          X: :request,
-          d: :data,
-          b: :cookie,
-          I: :head,
-          F: :form,
-          L: :location,
-          u: :user,
-          x: :proxy,
-          U: :proxy_user,
-          n: :netrc,
-          k: :insecure,
-          A: :user_agent
-        ]
+        strict: @flags,
+        aliases: @aliases
       )
 
     if invalid != [] do
