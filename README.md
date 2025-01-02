@@ -61,6 +61,35 @@ iex> Req.new(url: "/fact", base_url: "https://example.com/")
 
 ```
 
+## Supported Features
+
+CurlReq parses a bunch of cURL flags and translates them to Req.Request structs and vice versa. To get an up to date list you can call 
+
+```elixir
+CurlReq.Curl.flags()
+```
+
+### Supported Flags
+
+| Long         | Short | Comment |
+| ---          | --- | --- |
+| --header     | -H | |
+| --request    | -X | |
+| --data       | -d |  No file interpolation with `@`|
+| --data_raw   |    | No file interpolation with `@`|
+| --data_ascii |    | No file interpolation with `@`|
+| --cookie     | -b | |
+| --head       | -I | |
+| --form       | -F | |
+| --location   | -L | |
+| --user       | -u | | Only as basic auth
+| --compressed |    | |
+| --proxy      | -x | |
+| --proxy_user | -U | | Only as basic auth
+| --netrc      | -n | |
+| --netrc_file |    | |
+| --insecure   | -k | |
+| --user_agent | -A | |
 
 ## Installation
 
