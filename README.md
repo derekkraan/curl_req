@@ -67,7 +67,9 @@ CurlReq parses a bunch of cURL flags and translates them to Req.Request structs 
 
 ### Supported Flags
 
-| Long         | Short | Comment |
+The follwing flags are supported in all directions (from Req, from cURL, to Req, to cURL)
+
+| Long         | Short | Limitation |
 | ---          | --- | --- |
 | `--header`     | `-H` | |
 | `--request`    | `-X` | |
