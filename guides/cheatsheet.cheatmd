@@ -1,0 +1,51 @@
+# cURL Cheatsheet
+
+## Flags
+
+### Examples
+
+#### Header
+```bash
+curl -H "Authorization: Bearer 1234567890" https://example.com
+```
+
+#### Method
+```bash
+curl -X POST https://example.com
+```
+
+#### Data
+```bash
+curl -d "foo bar" https://example.com
+```
+
+#### Cookies
+```bash
+curl -b "my_cookie=my_value" https://example.com
+```
+
+#### Follow redirects
+```bash
+curl -L https://example.com
+```
+
+#### Basic auth
+
+This will authenticate the user `foo` with the password `bar`
+```bash
+curl -u foo:bar https://example.com
+```
+
+#### Proxy
+
+This will authenticate the user `foo` with the password `bar` for the proxy `myproxy.example.com`
+
+```bash
+curl -x myproxy.example.com -U foo:bar https://example.com
+```
+
+####  Insecure Request
+
+```bash
+curl -k https://example.com
+```
