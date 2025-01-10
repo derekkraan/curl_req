@@ -1,6 +1,6 @@
-# 🥌 🥌 🥌 CurlReq 🥌 🥌 🥌
+# 🥌 CurlReq  
 
-<!-- MDOC !-->
+🥌 🥌 🥌 🥌 🥌 🥌
 
 Req is awesome, but the world speaks curl.
 
@@ -61,7 +61,33 @@ iex> Req.new(url: "/fact", base_url: "https://example.com/")
 
 ```
 
-<!-- MDOC !-->
+## Supported Features
+
+CurlReq parses a bunch of cURL flags and translates them to Req.Request structs and vice versa. To get an up to date list you can call `CurlReq.Curl.flags/0`
+
+### Supported Flags
+
+The follwing flags are supported in all directions (from Req, from cURL, to Req, to cURL)
+
+| Long         | Short | Limitation |
+| ---          | --- | --- |
+| `--header`     | `-H` | |
+| `--request`    | `-X` | |
+| `--data`       | `-d` |  No file interpolation with `@`|
+| `--data_raw`   |      | No file interpolation with `@`|
+| `--data_ascii` |      | No file interpolation with `@`|
+| `--cookie`     | `-b` | |
+| `--head`       | `-I` | |
+| `--form`       | `-F` | |
+| `--location`   | `-L` | |
+| `--user`       | `-u` |  Only as basic auth |
+| `--compressed` |      | |
+| `--proxy`      | `-x` | |
+| `--proxy_user` | `-U` |  Only as basic auth |
+| `--netrc`      | `-n` | |
+| `--netrc_file` |      | |
+| `--insecure`   | `-k` | |
+| `--user_agent` | `-A` | |
 
 ## Installation
 
@@ -71,7 +97,7 @@ by adding `curl_req` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:curl_req, "~> 0.98.0"}
+    {:curl_req, "~> 0.100.0"}
   ]
 end
 ```
