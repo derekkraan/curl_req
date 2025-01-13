@@ -627,6 +627,16 @@ defmodule CurlReqTest do
              """
     end
 
+    test "unused flags get ignored" do
+      # we don't need an assertion because if we couldn't parse the flag we would throw an exception and the test would fail
+      CurlReq.Curl.decode(~s(curl -o "somefile" https://example.com))
+      CurlReq.Curl.decode(~s(curl -O https://example.com))
+      CurlReq.Curl.decode(~s(curl -s https://example.com))
+      CurlReq.Curl.decode(~s(curl -S https://example.com))
+      CurlReq.Curl.decode(~s(curl -f https://example.com))
+      CurlReq.Curl.decode(~s(curl -fsS https://example.com))
+    end
+
     test "raises on unsupported flag" do
       assert_raise ArgumentError, ~r/Unknown "--foo"/, fn ->
         CurlReq.Curl.decode(~s(curl --foo https://example.com))

@@ -22,7 +22,12 @@ defmodule CurlReq.Curl do
     netrc: :boolean,
     netrc_file: :string,
     insecure: :boolean,
-    user_agent: :string
+    user_agent: :string,
+    fail: :boolean,
+    silent: :boolean,
+    show_error: :boolean,
+    output: :string,
+    remote_name: :boolean
   ]
 
   @aliases [
@@ -38,7 +43,12 @@ defmodule CurlReq.Curl do
     U: :proxy_user,
     n: :netrc,
     k: :insecure,
-    A: :user_agent
+    A: :user_agent,
+    f: :fail,
+    s: :silent,
+    S: :show_error,
+    o: :output,
+    O: :remote_name
   ]
 
   @doc """
