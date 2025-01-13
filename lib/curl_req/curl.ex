@@ -80,6 +80,19 @@ defmodule CurlReq.Curl do
     end)
   end
 
+  defp validate_uri("http://" <> _rest = uri), do: URI.parse(uri)
+  defp validate_uri("https://" <> _rest = uri), do: URI.parse(uri)
+
+  defp validate_uri(uri) do
+    case String.split(uri, "://") do
+      [scheme, _uri] ->
+        raise ArgumentError, "Unsupported scheme #{scheme} for URL in #{uri}"
+
+      [uri] ->
+        URI.parse("http://" <> uri)
+    end
+  end
+
   @impl CurlReq.Request
   @spec decode(String.t()) :: CurlReq.Request.t()
   def decode(command, _opts \\ []) when is_binary(command) do
@@ -120,7 +133,7 @@ defmodule CurlReq.Curl do
       rest
       |> List.flatten()
 
-    url = URI.parse(url)
+    url = validate_uri(url)
 
     %CurlReq.Request{}
     |> CurlReq.Request.put_url(url)
@@ -227,26 +240,13 @@ defmodule CurlReq.Curl do
         request
 
       {proxy, nil} ->
-        proxy = validate_proxy_uri(proxy)
+        proxy = validate_uri(proxy)
         CurlReq.Request.put_proxy(request, proxy)
 
       {proxy, proxy_user} ->
-        proxy = validate_proxy_uri(proxy)
+        proxy = validate_uri(proxy)
         proxy = %{proxy | userinfo: proxy_user}
         CurlReq.Request.put_proxy(request, proxy)
-    end
-  end
-
-  defp validate_proxy_uri("http://" <> _rest = uri), do: URI.parse(uri)
-  defp validate_proxy_uri("https://" <> _rest = uri), do: URI.parse(uri)
-
-  defp validate_proxy_uri(uri) do
-    case String.split(uri, "://") do
-      [scheme, _uri] ->
-        raise ArgumentError, "Unsupported scheme #{scheme} for proxy in #{uri}"
-
-      [uri] ->
-        URI.parse("http://" <> uri)
     end
   end
 
