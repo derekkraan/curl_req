@@ -89,21 +89,25 @@ defmodule CurlReq.Req do
       end
 
     req =
-      case request.encoding do
-        :raw ->
-          Req.merge(req, body: request.body)
+      if not is_nil(request.body) do
+        case request.encoding do
+          :raw ->
+            Req.merge(req, body: request.body)
 
-        :form ->
-          req
-          |> Req.Request.register_options([:form])
-          |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
-          |> Req.merge(form: request.body)
+          :form ->
+            req
+            |> Req.Request.register_options([:form])
+            |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
+            |> Req.merge(form: request.body)
 
-        :json ->
-          req
-          |> Req.Request.register_options([:json])
-          |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
-          |> Req.merge(json: request.body)
+          :json ->
+            req
+            |> Req.Request.register_options([:json])
+            |> Req.Request.prepend_request_steps(encode_body: &Req.Steps.encode_body/1)
+            |> Req.merge(json: request.body)
+        end
+      else
+        req
       end
 
     req =

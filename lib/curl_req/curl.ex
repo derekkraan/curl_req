@@ -124,8 +124,8 @@ defmodule CurlReq.Curl do
 
     %CurlReq.Request{}
     |> CurlReq.Request.put_url(url)
+    |> CurlReq.Request.put_encoding(:form)
     |> add_header(options)
-    |> add_method(options)
     |> add_body(options)
     |> add_cookie(options)
     |> add_form(options)
@@ -134,6 +134,7 @@ defmodule CurlReq.Curl do
     |> add_proxy(options)
     |> add_insecure(options)
     |> add_user_agent(options)
+    |> add_method(options)
     |> configure_redirects(options)
   end
 
@@ -165,7 +166,9 @@ defmodule CurlReq.Curl do
       |> Enum.join("&")
 
     if body != "" do
-      CurlReq.Request.put_body(request, body)
+      request
+      |> CurlReq.Request.put_body(body)
+      |> CurlReq.Request.put_method(:post)
     else
       request
     end
@@ -196,14 +199,12 @@ defmodule CurlReq.Curl do
       formdata ->
         form =
           for fd <- formdata, reduce: %{} do
-            map ->
-              [key, value] = String.split(fd, "=", parts: 2)
-              Map.put(map, key, value)
+            data -> Map.merge(data, URI.decode_query(fd))
           end
 
         request
-        |> CurlReq.Request.put_body(form)
         |> CurlReq.Request.put_encoding(:form)
+        |> CurlReq.Request.put_body(form)
     end
   end
 
@@ -289,16 +290,19 @@ defmodule CurlReq.Curl do
       end
 
     headers =
-      case request.encoding do
-        :raw ->
-          headers
+      headers ++
+        emit_if(request.body, fn ->
+          case request.encoding do
+            :raw ->
+              [header_flag(flag_style, "content-type: text/plain")]
 
-        :json ->
-          headers ++ [header_flag(flag_style, "content-type: application/json")]
+            :json ->
+              [header_flag(flag_style, "content-type: application/json")]
 
-        :form ->
-          headers ++ [header_flag(flag_style, "content-type: application/x-www-form-urlencoded")]
-      end
+            :form ->
+              [header_flag(flag_style, "content-type: application/x-www-form-urlencoded")]
+          end
+        end)
 
     user_agent =
       case {flavor, request.user_agent} do
@@ -311,8 +315,14 @@ defmodule CurlReq.Curl do
     body =
       emit_if(request.body, fn ->
         case request.encoding do
-          :json -> [data_flag(flag_style, Jason.encode!(request.body))]
-          _ -> [data_flag(flag_style, request.body)]
+          :json ->
+            [data_flag(flag_style, Jason.encode!(request.body))]
+
+          :form ->
+            [data_flag(flag_style, URI.encode_query(request.body))]
+
+          :raw ->
+            [data_flag(flag_style, request.body)]
         end
       end)
 
