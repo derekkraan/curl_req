@@ -216,6 +216,22 @@ defmodule CurlReqTest do
   end
 
   describe "from_curl" do
+    test "no scheme in url defaults to http" do
+      assert ~CURL(curl example.com/fact) ==
+               %Req.Request{
+                 method: :get,
+                 url: URI.parse("http://example.com/fact")
+               }
+    end
+
+    test "wrong scheme raises error" do
+      assert_raise(
+        ArgumentError,
+        "Unsupported scheme ftp for URL in ftp://example.com/fact",
+        fn -> CurlReq.from_curl(~s"curl ftp://example.com/fact") end
+      )
+    end
+
     test "single header" do
       assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://example.com/fact) ==
                %Req.Request{
@@ -483,7 +499,7 @@ defmodule CurlReqTest do
     test "proxy raises on non http scheme uri" do
       assert_raise(
         ArgumentError,
-        "Unsupported scheme ssh for proxy in ssh://my.proxy.com:22225",
+        "Unsupported scheme ssh for URL in ssh://my.proxy.com:22225",
         fn ->
           CurlReq.Curl.decode("curl --proxy ssh://my.proxy.com:22225 http://example.com")
         end
