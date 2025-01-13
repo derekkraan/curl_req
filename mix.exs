@@ -33,10 +33,12 @@ defmodule CurlReq.MixProject do
   end
 
   defp docs do
-    [main: "README", extras: extras()]
+    [
+      main: "readme",
+      extras: ["README.md", "CHANGELOG.md", "guides/usage.livemd", "guides/cheatsheet.cheatmd"],
+      groups_for_extras: [Guides: Path.wildcard("guides/*")]
+    ]
   end
-
-  defp extras, do: ["README.md", "CHANGELOG.md"]
 
   defp package() do
     [
