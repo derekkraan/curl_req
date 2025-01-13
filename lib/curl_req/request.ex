@@ -23,7 +23,7 @@ defmodule CurlReq.Request do
           auth: auth(),
           encoding: encoding(),
           body: term(),
-          raw_body: term(),
+          raw_body: String.t(),
           insecure: boolean()
         }
 
@@ -92,6 +92,9 @@ defmodule CurlReq.Request do
       {"content-type", "application/json"} ->
         %{request | encoding: :json}
 
+      {"content-type", "application/vnd.api+json"} ->
+        %{request | encoding: :json}
+
       {"content-type", "application/x-www-form-urlencoded"} ->
         %{request | encoding: :form}
 
@@ -150,24 +153,50 @@ defmodule CurlReq.Request do
       %{"some" => "body"}
   """
   @spec put_body(__MODULE__.t(), term()) :: __MODULE__.t()
+
   def put_body(%__MODULE__{} = request, nil), do: request
 
-  def put_body(%__MODULE__{} = request, input) do
-    body =
-      case request.encoding do
-        :json ->
-          with true <- is_binary(input) or is_list(input),
-               {:ok, json} <- Jason.decode(input) do
-            json
-          else
-            _ -> input
-          end
+  def put_body(%__MODULE__{encoding: :json} = request, input) when is_map(input) do
+    %{request | body: input, raw_body: Jason.encode!(input)}
+  end
 
-        _ ->
-          input
-      end
+  def put_body(%__MODULE__{encoding: :form} = request, input) when is_map(input) do
+    %{request | body: input, raw_body: URI.encode_query(input)}
+  end
 
-    %{request | body: body, raw_body: input}
+  def put_body(%__MODULE__{encoding: :json} = request, input) do
+    json = decode_json(input)
+    %{request | body: json, raw_body: input}
+  end
+
+  def put_body(%__MODULE__{encoding: :form} = request, input) do
+    form = decode_form(input)
+    %{request | body: form, raw_body: input}
+  end
+
+  def put_body(%__MODULE__{encoding: :raw} = request, input) do
+    %{request | body: input, raw_body: input}
+  end
+
+  defp decode_json(nil), do: nil
+  defp decode_json(json) when is_map(json), do: json
+
+  defp decode_json(input) when is_binary(input) or is_list(input) do
+    case Jason.decode(input) do
+      {:ok, json} -> json
+      _ -> %{}
+    end
+  end
+
+  defp decode_form(nil), do: nil
+  defp decode_form(form) when is_map(form), do: form
+
+  defp decode_form(input) when is_list(input) do
+    IO.iodata_to_binary(input) |> decode_form()
+  end
+
+  defp decode_form(input) when is_binary(input) do
+    URI.decode_query(input)
   end
 
   @doc """
@@ -189,31 +218,32 @@ defmodule CurlReq.Request do
       :raw
 
       iex> request = %CurlReq.Request{} 
-      ...> |> CurlReq.Request.put_body(~S|{"foo": "bar"}|) 
-      ...> |> CurlReq.Request.put_encoding(:json)
-      iex> request.encoding
-      :json
+      ...> |> CurlReq.Request.put_body("foo=bar") 
+      ...> |> CurlReq.Request.put_encoding(:form)
       iex> request.body
       %{"foo" =>  "bar"}
-      iex> request = request |> CurlReq.Request.put_encoding(:raw)
+
+      iex> request = %CurlReq.Request{} 
+      ...> |> CurlReq.Request.put_body(~S|{"foo": "bar"}|) 
+      ...> |> CurlReq.Request.put_encoding(:json)
       iex> request.body
-      ~S|{"foo": "bar"}|
+      %{"foo" =>  "bar"}
   """
   @spec put_encoding(__MODULE__.t(), encoding()) :: __MODULE__.t()
+  def put_encoding(%__MODULE__{encoding: encoding} = request, encoding), do: request
+
+  def put_encoding(%__MODULE__{encoding: from} = request, to)
+      when from in [:json, :form] and to in [:json, :form] do
+    request
+  end
+
   def put_encoding(%__MODULE__{raw_body: raw_body} = request, encoding)
       when encoding in [:raw, :json, :form] do
     body =
       case encoding do
-        :json ->
-          with true <- is_binary(raw_body) or is_list(raw_body),
-               {:ok, json} <- Jason.decode(raw_body) do
-            json
-          else
-            _ -> raw_body
-          end
-
-        _ ->
-          raw_body
+        :json -> decode_json(raw_body)
+        :form -> decode_form(raw_body)
+        :raw -> raw_body
       end
 
     %{request | body: body, encoding: encoding}

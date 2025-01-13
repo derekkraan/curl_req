@@ -145,9 +145,6 @@ defmodule CurlReq do
       iex> CurlReq.from_curl("curl https://www.example.com")
       %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
 
-      iex> CurlReq.from_curl(~s|curl -d "some data" https://example.com|)
-      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
-
       iex> CurlReq.from_curl("curl -I https://example.com")
       %Req.Request{method: :head, url: URI.parse("https://example.com")}
 
@@ -177,9 +174,6 @@ defmodule CurlReq do
 
       iex> ~CURL(curl "https://www.example.com")
       %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
-
-      iex> ~CURL(curl -d "some data" "https://example.com")
-      %Req.Request{method: :get, body: "some data", url: URI.parse("https://example.com")}
 
       iex> ~CURL(curl -I "https://example.com")
       %Req.Request{method: :head, url: URI.parse("https://example.com")}

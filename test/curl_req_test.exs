@@ -55,7 +55,9 @@ defmodule CurlReqTest do
                headers: %{"cookie" => ["name1=value1"], "content-type" => ["application/json"]}
              )
              |> CurlReq.to_curl(flags: :long) ==
-               ~S|curl --compressed --header "content-type: application/json" --cookie "name1=value1" --location --head http://example.com|
+               ~S|curl --compressed --cookie "name1=value1" --location --head http://example.com|
+
+      # header get's removed because body is empty
     end
 
     test "formdata flags get set with correct headers and body" do
@@ -65,7 +67,7 @@ defmodule CurlReqTest do
     end
 
     test "works when body is iodata" do
-      assert "curl --compressed -d hello -X POST https://example.com/fact" ==
+      assert ~s|curl --compressed -H "content-type: text/plain" -d hello -X POST https://example.com/fact| ==
                Req.new(
                  method: :post,
                  url: "/fact",
@@ -256,6 +258,64 @@ defmodule CurlReqTest do
                }
     end
 
+    test "raw body" do
+      assert ~CURL(curl -d foo https://example.com) ==
+               %Req.Request{
+                 options: %{form: %{"foo" => ""}},
+                 registered_options: MapSet.new([:form]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("https://example.com"),
+                 method: :post
+               }
+    end
+
+    test "form body" do
+      assert ~CURL(curl -d foo=bar https://example.com) ==
+               %Req.Request{
+                 options: %{form: %{"foo" => "bar"}},
+                 registered_options: MapSet.new([:form]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("https://example.com"),
+                 method: :post
+               }
+
+      assert ~CURL(curl -d foo=bar&baz=qux https://example.com) ==
+               %Req.Request{
+                 options: %{form: %{"foo" => "bar", "baz" => "qux"}},
+                 registered_options: MapSet.new([:form]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("https://example.com"),
+                 method: :post
+               }
+    end
+
+    test "form body with multiple data flags" do
+      assert ~CURL(curl http://example.com -d name=foo -d mail=bar) ==
+               %Req.Request{
+                 options: %{form: %{"name" => "foo", "mail" => "bar"}},
+                 registered_options: MapSet.new([:form]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("http://example.com"),
+                 method: :post
+               }
+    end
+
+    test "json body" do
+      assert ~CURL(curl -H "content-type: application/json" -d "{\"foo\": \"bar\"}" https://example.com) ==
+               %Req.Request{
+                 options: %{json: %{"foo" => "bar"}},
+                 registered_options: MapSet.new([:json]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("https://example.com"),
+                 method: :post
+               }
+    end
+
     test "multiple headers with body" do
       assert ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}" -X POST "https://example.com/rest/v1/leads/submitForm.json") ==
                %Req.Request{
@@ -303,14 +363,6 @@ defmodule CurlReqTest do
                }
     end
 
-    test "multiple data flags" do
-      assert ~CURL(curl http://example.com -d name=foo -d mail=bar) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 body: "name=foo&mail=bar"
-               }
-    end
-
     test "cookie" do
       assert ~CURL(http://example.com -b "name1=value1") ==
                %Req.Request{
@@ -342,20 +394,17 @@ defmodule CurlReqTest do
              curl 'https://example.com/graphql' \
              -X POST \
              -H 'Accept: application/graphql-response+json'\
+             -H 'Content-Type: application/json' \
              --data-raw '{"operationName":"get","query":"query get {name}"}'
              """ ==
                %Req.Request{
                  method: :post,
                  url: URI.parse("https://example.com/graphql"),
                  headers: %{"accept" => ["application/graphql-response+json"]},
-                 body: "{\"operationName\":\"get\",\"query\":\"query get {name}\"}",
-                 options: %{},
-                 halted: false,
-                 adapter: &Req.Steps.run_finch/1,
-                 request_steps: [],
-                 response_steps: [],
-                 error_steps: [],
-                 private: %{}
+                 registered_options: MapSet.new([:json]),
+                 options: %{json: %{"operationName" => "get", "query" => "query get {name}"}},
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1]
                }
     end
 
@@ -363,6 +412,7 @@ defmodule CurlReqTest do
       assert ~CURL"""
              curl 'https://example.com/employees/107'\
              -X PATCH\
+             -H 'Content-Type: application/json' \
              -H 'Accept: application/vnd.api+json'\
              --data-raw $'{"data":{"attributes":{"first-name":"Adam"}}}'
              """ ==
@@ -370,14 +420,10 @@ defmodule CurlReqTest do
                  method: :patch,
                  url: URI.parse("https://example.com/employees/107"),
                  headers: %{"accept" => ["application/vnd.api+json"]},
-                 body: "{\"data\":{\"attributes\":{\"first-name\":\"Adam\"}}}",
-                 options: %{},
-                 halted: false,
-                 adapter: &Req.Steps.run_finch/1,
-                 request_steps: [],
-                 response_steps: [],
-                 error_steps: [],
-                 private: %{}
+                 registered_options: MapSet.new([:json]),
+                 options: %{json: %{"data" => %{"attributes" => %{"first-name" => "Adam"}}}},
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1]
                }
     end
 
