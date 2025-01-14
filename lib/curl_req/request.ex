@@ -71,45 +71,47 @@ defmodule CurlReq.Request do
       {:bearer, "foobar"}
   """
   @spec put_header(__MODULE__.t(), String.t(), String.t() | [String.t()]) :: __MODULE__.t()
-  def put_header(%__MODULE__{} = request, key, [val]) do
+  def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
+    key = String.downcase(key) |> String.trim()
+    val = String.split(val, ";", trim: true) |> Enum.map(&String.trim/1)
     put_header(request, key, val)
   end
 
-  def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
-    key = String.downcase(key)
+  def put_header(%__MODULE__{} = request, key, val) when is_list(val) do
+    key = String.downcase(key) |> String.trim()
 
     case {key, val} do
-      {"authorization", "Bearer " <> token} ->
+      {"authorization", ["Bearer " <> token | _]} ->
         %{request | auth: {:bearer, token}}
 
-      {"authorization", "Basic " <> userinfo} ->
+      {"authorization", ["Basic " <> userinfo | _]} ->
         %{request | auth: {:basic, userinfo}}
 
-      {"accept-encoding", compression}
+      {"accept-encoding", [compression | _]}
       when compression in ["gzip", "br", "zstd"] ->
         put_compression(request, String.to_existing_atom(compression))
 
-      {"content-type", "application/json"} ->
+      {"content-type", ["application/json" | _]} ->
         %{request | encoding: :json}
 
-      {"content-type", "application/vnd.api+json"} ->
+      {"content-type", ["application/vnd.api+json" | _]} ->
         %{request | encoding: :json}
 
-      {"content-type", "application/x-www-form-urlencoded"} ->
+      {"content-type", ["application/x-www-form-urlencoded" | _]} ->
         %{request | encoding: :form}
 
-      {"user-agent", user_agent} ->
+      {"user-agent", [user_agent | _]} ->
         put_user_agent(request, user_agent)
 
       {"cookie", cookies} ->
-        for cookie <- String.split(cookies, ";"), reduce: request do
+        for cookie <- cookies, reduce: request do
           request ->
             [key, value] = String.split(cookie, "=")
             put_cookie(request, key, value)
         end
 
       {key, val} ->
-        headers = Map.put(request.headers, key, String.split(val, ";"))
+        headers = Map.put(request.headers, key, val)
         %{request | headers: headers}
     end
   end
@@ -182,10 +184,7 @@ defmodule CurlReq.Request do
   defp decode_json(json) when is_map(json), do: json
 
   defp decode_json(input) when is_binary(input) or is_list(input) do
-    case Jason.decode(input) do
-      {:ok, json} -> json
-      _ -> %{}
-    end
+    Jason.decode!(input)
   end
 
   defp decode_form(nil), do: nil
