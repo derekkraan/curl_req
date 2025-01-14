@@ -348,6 +348,18 @@ defmodule CurlReqTest do
                }
     end
 
+    test "complex cookie" do
+      request =
+        ~CURL(curl --header 'Cookie: TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf; sapphire=1; visitorId=0184E4601D5A020183FFBB133 80347CE; GuestLocation=33196|25.660|-80.440|FL|US' -X GET https://example.com)
+
+      cookies = request.headers["cookie"]
+
+      assert "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf" in cookies
+      assert "sapphire=1" in cookies
+      assert "visitorId=0184E4601D5A020183FFBB133 80347CE" in cookies
+      assert "GuestLocation=33196|25.660|-80.440|FL|US" in cookies
+    end
+
     test "multiple headers with body" do
       assert ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}" -X POST "https://example.com/rest/v1/leads/submitForm.json") ==
                %Req.Request{
@@ -405,7 +417,7 @@ defmodule CurlReqTest do
       assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1;name2=value2"]}
+                 headers: %{"cookie" => ["name1=value1", "name2=value2"]}
                }
     end
 

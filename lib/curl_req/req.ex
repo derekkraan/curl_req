@@ -76,11 +76,6 @@ defmodule CurlReq.Req do
       |> Req.merge(url: request.url)
       |> Req.merge(method: request.method)
 
-    cookies =
-      request.cookies
-      |> Enum.map(fn {key, val} -> "#{key}=#{val}" end)
-      |> Enum.join(";")
-
     req =
       case request.user_agent do
         :req -> req
@@ -151,12 +146,13 @@ defmodule CurlReq.Req do
         req -> Req.Request.put_header(req, key, values)
       end
 
-    req =
-      if cookies != "" do
-        Req.Request.put_header(req, "cookie", cookies)
-      else
-        req
-      end
+    cookies =
+      request.cookies
+      |> Enum.map(fn {key, val} ->
+        IO.iodata_to_binary([key, "=", val])
+      end)
+
+    req = if cookies != [], do: Req.Request.put_header(req, "cookie", cookies), else: req
 
     proxy =
       if request.proxy do

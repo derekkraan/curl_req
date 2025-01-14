@@ -103,8 +103,8 @@ defmodule CurlReq.Request do
       {"user-agent", [user_agent | _]} ->
         put_user_agent(request, user_agent)
 
-      {"cookie", [cookies | _]} ->
-        for cookie <- String.split(cookies, ";"), reduce: request do
+      {"cookie", cookies} ->
+        for cookie <- cookies, reduce: request do
           request ->
             [key, value] = String.split(cookie, "=")
             put_cookie(request, key, value)
