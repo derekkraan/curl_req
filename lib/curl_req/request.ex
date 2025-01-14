@@ -71,13 +71,14 @@ defmodule CurlReq.Request do
       {:bearer, "foobar"}
   """
   @spec put_header(__MODULE__.t(), String.t(), String.t() | [String.t()]) :: __MODULE__.t()
-  def put_header(%__MODULE__{} = request, key, [val]) do
+  def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
+    key = String.downcase(key) |> String.trim()
+    val = String.split(val, ";", trim: true) |> Enum.map(&String.trim/1)
     put_header(request, key, val)
   end
 
-  def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
+  def put_header(%__MODULE__{} = request, key, val) when is_list(val) do
     key = String.downcase(key) |> String.trim()
-    val = String.split(val, ";", trim: true)
 
     case {key, val} do
       {"authorization", ["Bearer " <> token | _]} ->

@@ -83,6 +83,18 @@ defmodule CurlReqTest do
                |> CurlReq.to_curl()
     end
 
+    test "header" do
+      assert ~s(curl --compressed -H "my-header: foo" -X GET https://example.com) ==
+               Req.new(url: "https://example.com", headers: %{"my-header" => ["foo"]})
+               |> CurlReq.to_curl()
+    end
+
+    test "parameterized header" do
+      assert ~s(curl --compressed -H "my-header: foo; bar=baz" -X GET https://example.com) ==
+               Req.new(url: "https://example.com", headers: %{"my-header" => ["foo", "bar=baz"]})
+               |> CurlReq.to_curl()
+    end
+
     test "req flavor with explicit headers" do
       assert ~s|curl -H "accept-encoding: gzip" -A "req/#{req_version()}" -X GET https://example.com| ==
                Req.new(url: "https://example.com")
@@ -313,6 +325,26 @@ defmodule CurlReqTest do
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
                  method: :post
+               }
+    end
+
+    test "content-type with parameter" do
+      assert ~CURL(curl -H "content-type: application/json; charset=utf-8" -d '{"foo": "bar"}' https://example.com) ==
+               %Req.Request{
+                 options: %{json: %{"foo" => "bar"}},
+                 registered_options: MapSet.new([:json]),
+                 current_request_steps: [:encode_body],
+                 request_steps: [encode_body: &Req.Steps.encode_body/1],
+                 url: URI.parse("https://example.com"),
+                 method: :post
+               }
+    end
+
+    test "header with parameter" do
+      assert ~CURL(curl -H "my-header: foo; bar=baz" https://example.com) ==
+               %Req.Request{
+                 url: URI.parse("https://example.com"),
+                 headers: %{"my-header" => ["foo", "bar=baz"]}
                }
     end
 
