@@ -742,6 +742,8 @@ defmodule CurlReqTest do
       CurlReq.Curl.decode(~s(curl -f https://example.com))
       CurlReq.Curl.decode(~s(curl -fsS https://example.com))
       CurlReq.Curl.decode(~s(curl -v https://example.com))
+      CurlReq.Curl.decode(~s(curl -vvv https://example.com))
+      CurlReq.Curl.decode(~s(curl --verbose https://example.com))
     end
 
     test "raises on unsupported flag" do
