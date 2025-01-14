@@ -67,7 +67,7 @@ CurlReq parses a bunch of cURL flags and translates them to Req.Request structs 
 
 ### Supported Flags
 
-The follwing flags are supported in all directions (from Req, from cURL, to Req, to cURL)
+The following flags are supported in all directions (from Req, from cURL, to Req, to cURL)
 
 | Long         | Short | Limitation |
 | ---          | --- | --- |
@@ -88,6 +88,19 @@ The follwing flags are supported in all directions (from Req, from cURL, to Req,
 | `--netrc_file` |      | |
 | `--insecure`   | `-k` | |
 | `--user_agent` | `-A` | |
+
+### Ignored flags
+
+The following flags are currently ignored because they mostly describe the runtime behaviour and not the request itself.
+
+| Long         | Short | 
+| ---          | --- | 
+| `--verbose`     | `-v` |
+| `--output`    | `-o` | 
+| `--remote_name`       | `-O` |
+| `--show-error`     | `-S` |
+| `--silent`       | `-s` |
+| `--fail`       | `-f` |
 
 ## Installation
 
