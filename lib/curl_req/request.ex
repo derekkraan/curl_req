@@ -76,32 +76,33 @@ defmodule CurlReq.Request do
   end
 
   def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
-    key = String.downcase(key)
+    key = String.downcase(key) |> String.trim()
+    val = String.split(val, ";", trim: true)
 
     case {key, val} do
-      {"authorization", "Bearer " <> token} ->
+      {"authorization", ["Bearer " <> token | _]} ->
         %{request | auth: {:bearer, token}}
 
-      {"authorization", "Basic " <> userinfo} ->
+      {"authorization", ["Basic " <> userinfo | _]} ->
         %{request | auth: {:basic, userinfo}}
 
-      {"accept-encoding", compression}
+      {"accept-encoding", [compression | _]}
       when compression in ["gzip", "br", "zstd"] ->
         put_compression(request, String.to_existing_atom(compression))
 
-      {"content-type", "application/json"} ->
+      {"content-type", ["application/json" | _]} ->
         %{request | encoding: :json}
 
-      {"content-type", "application/vnd.api+json"} ->
+      {"content-type", ["application/vnd.api+json" | _]} ->
         %{request | encoding: :json}
 
-      {"content-type", "application/x-www-form-urlencoded"} ->
+      {"content-type", ["application/x-www-form-urlencoded" | _]} ->
         %{request | encoding: :form}
 
-      {"user-agent", user_agent} ->
+      {"user-agent", [user_agent | _]} ->
         put_user_agent(request, user_agent)
 
-      {"cookie", cookies} ->
+      {"cookie", [cookies | _]} ->
         for cookie <- String.split(cookies, ";"), reduce: request do
           request ->
             [key, value] = String.split(cookie, "=")
@@ -109,7 +110,7 @@ defmodule CurlReq.Request do
         end
 
       {key, val} ->
-        headers = Map.put(request.headers, key, String.split(val, ";"))
+        headers = Map.put(request.headers, key, val)
         %{request | headers: headers}
     end
   end
