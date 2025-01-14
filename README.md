@@ -1,4 +1,4 @@
-# 🥌 CurlReq  
+# 🥌 CurlReq
 
 🥌 🥌 🥌 🥌 🥌 🥌
 
@@ -17,12 +17,13 @@ And you'll have the full curl command.
 ## Usage
 
 ### Req to Curl
+
 ```elixir
 # Turn a Req request into a `curl` command.
 
 iex> Req.new(url: "/fact", base_url: "https://example.com/")
 ...> |> CurlReq.to_curl()
-"curl --compressed -X GET https://example.com/fact" 
+"curl --compressed -X GET https://example.com/fact"
 
 # Or use `CurlReq.inspect/2` to inspect inline.
 
@@ -44,6 +45,7 @@ iex> import CurlReq
 ```
 
 or use `CurlReq.from_curl/1`:
+
 ```elixir
 iex> CurlReq.from_curl("curl https://example.com")
 ...> # |> Req.request!()
@@ -69,38 +71,38 @@ CurlReq parses a bunch of cURL flags and translates them to Req.Request structs 
 
 The following flags are supported in all directions (from Req, from cURL, to Req, to cURL)
 
-| Long         | Short | Limitation |
-| ---          | --- | --- |
-| `--header`     | `-H` | |
-| `--request`    | `-X` | |
-| `--data`       | `-d` |  No file interpolation with `@`|
-| `--data_raw`   |      | No file interpolation with `@`|
-| `--data_ascii` |      | No file interpolation with `@`|
-| `--cookie`     | `-b` | |
-| `--head`       | `-I` | |
-| `--form`       | `-F` | |
-| `--location`   | `-L` | |
-| `--user`       | `-u` |  Only as basic auth |
-| `--compressed` |      | |
-| `--proxy`      | `-x` | |
-| `--proxy_user` | `-U` |  Only as basic auth |
-| `--netrc`      | `-n` | |
-| `--netrc_file` |      | |
-| `--insecure`   | `-k` | |
-| `--user_agent` | `-A` | |
+| Long           | Short | Limitation                     |
+| -------------- | ----- | ------------------------------ |
+| `--header`     | `-H`  |                                |
+| `--request`    | `-X`  |                                |
+| `--data`       | `-d`  | No file interpolation with `@` |
+| `--data_raw`   |       | No file interpolation with `@` |
+| `--data_ascii` |       | No file interpolation with `@` |
+| `--cookie`     | `-b`  |                                |
+| `--head`       | `-I`  |                                |
+| `--form`       | `-F`  |                                |
+| `--location`   | `-L`  |                                |
+| `--user`       | `-u`  | Only as basic auth             |
+| `--compressed` |       |                                |
+| `--proxy`      | `-x`  |                                |
+| `--proxy_user` | `-U`  | Only as basic auth             |
+| `--netrc`      | `-n`  |                                |
+| `--netrc_file` |       |                                |
+| `--insecure`   | `-k`  |                                |
+| `--user_agent` | `-A`  |                                |
 
 ### Ignored flags
 
 The following flags are currently ignored because they mostly describe the runtime behaviour and not the request itself.
 
-| Long         | Short | 
-| ---          | --- | 
-| `--verbose`     | `-v` |
-| `--output`    | `-o` | 
-| `--remote_name`       | `-O` |
-| `--show-error`     | `-S` |
-| `--silent`       | `-s` |
-| `--fail`       | `-f` |
+| Long            | Short |
+| --------------- | ----- |
+| `--verbose`     | `-v`  |
+| `--output`      | `-o`  |
+| `--remote_name` | `-O`  |
+| `--show-error`  | `-S`  |
+| `--silent`      | `-s`  |
+| `--fail`        | `-f`  |
 
 ## Installation
 
