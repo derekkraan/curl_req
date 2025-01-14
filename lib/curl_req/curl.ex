@@ -27,7 +27,8 @@ defmodule CurlReq.Curl do
     silent: :boolean,
     show_error: :boolean,
     output: :string,
-    remote_name: :boolean
+    remote_name: :boolean,
+    verbose: :boolean
   ]
 
   @aliases [
@@ -48,7 +49,8 @@ defmodule CurlReq.Curl do
     s: :silent,
     S: :show_error,
     o: :output,
-    O: :remote_name
+    O: :remote_name,
+    v: :verbose
   ]
 
   @doc """
