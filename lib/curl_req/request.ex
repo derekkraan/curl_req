@@ -183,10 +183,7 @@ defmodule CurlReq.Request do
   defp decode_json(json) when is_map(json), do: json
 
   defp decode_json(input) when is_binary(input) or is_list(input) do
-    case Jason.decode(input) do
-      {:ok, json} -> json
-      _ -> %{}
-    end
+    Jason.decode!(input)
   end
 
   defp decode_form(nil), do: nil
