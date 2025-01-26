@@ -73,42 +73,42 @@ defmodule CurlReq.Request do
   @spec put_header(__MODULE__.t(), String.t(), String.t() | [String.t()]) :: __MODULE__.t()
   def put_header(%__MODULE__{} = request, key, val) when is_binary(val) do
     key = String.downcase(key) |> String.trim()
-    val = String.split(val, ";", trim: true) |> Enum.map(&String.trim/1)
-    put_header(request, key, val)
+    val = String.trim(val)
+    put_header(request, key, [val])
   end
 
   def put_header(%__MODULE__{} = request, key, val) when is_list(val) do
     key = String.downcase(key) |> String.trim()
 
     case {key, val} do
-      {"authorization", ["Bearer " <> token | _]} ->
+      {"authorization", ["Bearer " <> token]} ->
         %{request | auth: {:bearer, token}}
 
-      {"authorization", ["Basic " <> userinfo | _]} ->
+      {"authorization", ["Basic " <> userinfo]} ->
         %{request | auth: {:basic, userinfo}}
 
       {"accept-encoding", [compression | _]}
       when compression in ["gzip", "br", "zstd"] ->
         put_compression(request, String.to_existing_atom(compression))
 
-      {"content-type", ["application/json" | _]} ->
+      {"content-type", ["application/json" <> _]} ->
         %{request | encoding: :json}
 
-      {"content-type", ["application/vnd.api+json" | _]} ->
+      {"content-type", ["application/vnd.api+json" <> _]} ->
         %{request | encoding: :json}
 
-      {"content-type", ["application/x-www-form-urlencoded" | _]} ->
+      {"content-type", ["application/x-www-form-urlencoded" <> _]} ->
         %{request | encoding: :form}
 
-      {"user-agent", [user_agent | _]} ->
+      {"user-agent", [user_agent]} ->
         put_user_agent(request, user_agent)
 
-      {"cookie", cookies} ->
-        for cookie <- cookies, reduce: request do
-          request ->
-            [key, value] = String.split(cookie, "=")
-            put_cookie(request, key, value)
-        end
+      {"cookie", [cookie]} ->
+        cookie
+        |> Plug.Conn.Cookies.decode()
+        |> Enum.reduce(request, fn {key, val}, request ->
+          put_cookie(request, key, val)
+        end)
 
       {key, val} ->
         headers = Map.put(request.headers, key, val)

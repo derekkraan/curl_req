@@ -90,7 +90,7 @@ defmodule CurlReqTest do
     end
 
     test "parameterized header" do
-      assert ~s(curl --compressed -H "my-header: foo; bar=baz" -X GET https://example.com) ==
+      assert ~s(curl --compressed -H "my-header: foo, bar=baz" -X GET https://example.com) ==
                Req.new(url: "https://example.com", headers: %{"my-header" => ["foo", "bar=baz"]})
                |> CurlReq.to_curl()
     end
@@ -340,11 +340,11 @@ defmodule CurlReqTest do
                }
     end
 
-    test "header with parameter" do
-      assert ~CURL(curl -H "my-header: foo; bar=baz" https://example.com) ==
+    test "multiple header" do
+      assert ~CURL(curl -H "my-header: foo, bar=baz" https://example.com) ==
                %Req.Request{
                  url: URI.parse("https://example.com"),
-                 headers: %{"my-header" => ["foo", "bar=baz"]}
+                 headers: %{"my-header" => ["foo, bar=baz"]}
                }
     end
 
@@ -352,12 +352,12 @@ defmodule CurlReqTest do
       request =
         ~CURL(curl --header 'Cookie: TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf; sapphire=1; visitorId=0184E4601D5A020183FFBB133 80347CE; GuestLocation=33196|25.660|-80.440|FL|US' -X GET https://example.com)
 
-      cookies = request.headers["cookie"]
+      [cookie] = request.headers["cookie"]
 
-      assert "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf" in cookies
-      assert "sapphire=1" in cookies
-      assert "visitorId=0184E4601D5A020183FFBB133 80347CE" in cookies
-      assert "GuestLocation=33196|25.660|-80.440|FL|US" in cookies
+      assert String.contains?(cookie, "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf")
+      assert String.contains?(cookie, "sapphire=1")
+      assert String.contains?(cookie, "visitorId=0184E4601D5A020183FFBB133 80347CE")
+      assert String.contains?(cookie, "GuestLocation=33196|25.660|-80.440|FL|US")
     end
 
     test "multiple headers with body" do
@@ -417,7 +417,7 @@ defmodule CurlReqTest do
       assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1", "name2=value2"]}
+                 headers: %{"cookie" => ["name1=value1; name2=value2"]}
                }
     end
 

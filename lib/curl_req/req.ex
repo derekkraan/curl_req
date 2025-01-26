@@ -149,10 +149,11 @@ defmodule CurlReq.Req do
     cookies =
       request.cookies
       |> Enum.map(fn {key, val} ->
-        IO.iodata_to_binary([key, "=", val])
+        "#{key}=#{val}"
       end)
+      |> Enum.join("; ")
 
-    req = if cookies != [], do: Req.Request.put_header(req, "cookie", cookies), else: req
+    req = if request.cookies != %{}, do: Req.Request.put_header(req, "cookie", cookies), else: req
 
     proxy =
       if request.proxy do
