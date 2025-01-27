@@ -105,7 +105,7 @@ defmodule CurlReq.Request do
 
       {"cookie", [cookie]} ->
         cookie
-        |> Plug.Conn.Cookies.decode()
+        |> CurlReq.Cookies.decode()
         |> Enum.reduce(request, fn {key, val}, request ->
           put_cookie(request, key, val)
         end)
