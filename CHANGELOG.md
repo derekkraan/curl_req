@@ -20,6 +20,7 @@
 - Added Livebook and cURL Cheatsheet ([#35](https://github.com/derekkraan/curl_req/pull/35))
 - `http` scheme is now optional in cURL command ([#38](https://github.com/derekkraan/curl_req/pull/38))
 - Added more flags to parser, to avoid errors for common flags ([#37](https://github.com/derekkraan/curl_req/pull/37))
+- Handle header list correctly ([#45](https://github.com/derekkraan/curl_req/pull/45))
 
 ### Bugfixes
 
