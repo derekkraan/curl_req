@@ -288,7 +288,7 @@ defmodule CurlReq.Curl do
     headers =
       for {key, values} <- request.headers, reduce: [] do
         headers ->
-          [headers, header_flag(flag_style, [key, ": ", Enum.intersperse(values, "; ")])]
+          [headers, header_flag(flag_style, [key, ": ", Enum.intersperse(values, ", ")])]
       end
 
     headers =
