@@ -38,6 +38,23 @@ defmodule CurlReq.Req do
             end
 
           request =
+            case Keyword.get(connect_options, :protocols) do
+              nil ->
+                request
+
+              protocols ->
+                mapped_protos =
+                  for proto <- protocols do
+                    case proto do
+                      :http1 -> [:http1_0, :http1_1]
+                      :http2 -> [:http2]
+                    end
+                  end
+
+                CurlReq.Request.put_protocols(request, List.flatten(mapped_protos))
+            end
+
+          request =
             with transport_opts <- Keyword.get(connect_options, :transport_opts, []),
                  :verify_none <- Keyword.get(transport_opts, :verify) do
               CurlReq.Request.put_insecure(request, true)
@@ -179,6 +196,23 @@ defmodule CurlReq.Req do
           []
       end
 
+    protocols =
+      request.protocols
+      |> Enum.map(fn
+        :http1_0 -> :http1
+        :http1_1 -> :http1
+        :http2 -> :http2
+      end)
+      |> Enum.uniq()
+
+    protocols =
+      if protocols == [:http1] do
+        # do not set default values
+        []
+      else
+        [protocols: protocols]
+      end
+
     transport_opts =
       if request.insecure do
         [transport_opts: [verify: :verify_none]]
@@ -191,6 +225,7 @@ defmodule CurlReq.Req do
       |> Keyword.merge(proxy)
       |> Keyword.merge(proxy_auth)
       |> Keyword.merge(transport_opts)
+      |> Keyword.merge(protocols)
 
     req =
       if connect_options != [] do
