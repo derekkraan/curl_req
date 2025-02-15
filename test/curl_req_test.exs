@@ -257,7 +257,11 @@ defmodule CurlReqTest do
       assert ~CURL(curl example.com/fact) ==
                %Req.Request{
                  method: :get,
-                 url: URI.parse("http://example.com/fact")
+                 url: URI.parse("http://example.com/fact"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -273,7 +277,11 @@ defmodule CurlReqTest do
       assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://example.com/fact) ==
                %Req.Request{
                  method: :get,
-                 url: URI.parse("https://example.com/fact")
+                 url: URI.parse("https://example.com/fact"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -281,7 +289,11 @@ defmodule CurlReqTest do
       assert ~CURL(curl -X POST https://example.com) ==
                %Req.Request{
                  method: :post,
-                 url: URI.parse("https://example.com")
+                 url: URI.parse("https://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -289,15 +301,19 @@ defmodule CurlReqTest do
       assert ~CURL(curl -I https://example.com) ==
                %Req.Request{
                  method: :head,
-                 url: URI.parse("https://example.com")
+                 url: URI.parse("https://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
     test "raw body" do
       assert ~CURL(curl -d foo https://example.com) ==
                %Req.Request{
-                 options: %{form: %{"foo" => ""}},
-                 registered_options: MapSet.new([:form]),
+                 options: %{form: %{"foo" => ""}, connect_options: [protocols: [:http1, :http2]]},
+                 registered_options: MapSet.new([:form, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
@@ -308,8 +324,11 @@ defmodule CurlReqTest do
     test "form body" do
       assert ~CURL(curl -d foo=bar https://example.com) ==
                %Req.Request{
-                 options: %{form: %{"foo" => "bar"}},
-                 registered_options: MapSet.new([:form]),
+                 options: %{
+                   form: %{"foo" => "bar"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
+                 registered_options: MapSet.new([:form, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
@@ -318,8 +337,11 @@ defmodule CurlReqTest do
 
       assert ~CURL(curl -d foo=bar&baz=qux https://example.com) ==
                %Req.Request{
-                 options: %{form: %{"foo" => "bar", "baz" => "qux"}},
-                 registered_options: MapSet.new([:form]),
+                 options: %{
+                   form: %{"foo" => "bar", "baz" => "qux"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
+                 registered_options: MapSet.new([:form, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
@@ -330,8 +352,11 @@ defmodule CurlReqTest do
     test "form body with multiple data flags" do
       assert ~CURL(curl http://example.com -d name=foo -d mail=bar) ==
                %Req.Request{
-                 options: %{form: %{"name" => "foo", "mail" => "bar"}},
-                 registered_options: MapSet.new([:form]),
+                 options: %{
+                   form: %{"name" => "foo", "mail" => "bar"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
+                 registered_options: MapSet.new([:form, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("http://example.com"),
@@ -342,8 +367,11 @@ defmodule CurlReqTest do
     test "json body" do
       assert ~CURL(curl -H "content-type: application/json" -d "{\"foo\": \"bar\"}" https://example.com) ==
                %Req.Request{
-                 options: %{json: %{"foo" => "bar"}},
-                 registered_options: MapSet.new([:json]),
+                 options: %{
+                   json: %{"foo" => "bar"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
+                 registered_options: MapSet.new([:json, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
@@ -354,8 +382,11 @@ defmodule CurlReqTest do
     test "content-type with parameter" do
       assert ~CURL(curl -H "content-type: application/json; charset=utf-8" -d '{"foo": "bar"}' https://example.com) ==
                %Req.Request{
-                 options: %{json: %{"foo" => "bar"}},
-                 registered_options: MapSet.new([:json]),
+                 options: %{
+                   json: %{"foo" => "bar"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
+                 registered_options: MapSet.new([:json, :connect_options]),
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1],
                  url: URI.parse("https://example.com"),
@@ -367,7 +398,11 @@ defmodule CurlReqTest do
       assert ~CURL(curl -H "my-header: foo, bar=baz" https://example.com) ==
                %Req.Request{
                  url: URI.parse("https://example.com"),
-                 headers: %{"my-header" => ["foo, bar=baz"]}
+                 headers: %{"my-header" => ["foo, bar=baz"]},
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -388,7 +423,7 @@ defmodule CurlReqTest do
                %Req.Request{
                  method: :post,
                  url: URI.parse("https://example.com/rest/v1/leads/submitForm.json"),
-                 registered_options: MapSet.new([:compressed, :auth, :json]),
+                 registered_options: MapSet.new([:compressed, :auth, :json, :connect_options]),
                  options: %{
                    compressed: true,
                    auth: {:bearer, "6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon"},
@@ -411,7 +446,8 @@ defmodule CurlReqTest do
                          }
                        }
                      ]
-                   }
+                   },
+                   connect_options: [protocols: [:http1, :http2]]
                  },
                  current_request_steps: [:compressed, :auth, :encode_body],
                  request_steps: [
@@ -426,7 +462,11 @@ defmodule CurlReqTest do
       assert ~CURL(http://example.com) ==
                %Req.Request{
                  method: :get,
-                 url: URI.parse("http://example.com")
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -434,13 +474,21 @@ defmodule CurlReqTest do
       assert ~CURL(http://example.com -b "name1=value1") ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1"]}
+                 headers: %{"cookie" => ["name1=value1"]},
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
 
       assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1; name2=value2"]}
+                 headers: %{"cookie" => ["name1=value1; name2=value2"]},
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
 
@@ -449,8 +497,11 @@ defmodule CurlReqTest do
                %Req.Request{
                  url: URI.parse("http://example.com"),
                  body: nil,
-                 registered_options: MapSet.new([:form]),
-                 options: %{form: %{"name" => "foo", "mail" => "bar"}},
+                 registered_options: MapSet.new([:form, :connect_options]),
+                 options: %{
+                   form: %{"name" => "foo", "mail" => "bar"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1]
                }
@@ -468,8 +519,11 @@ defmodule CurlReqTest do
                  method: :post,
                  url: URI.parse("https://example.com/graphql"),
                  headers: %{"accept" => ["application/graphql-response+json"]},
-                 registered_options: MapSet.new([:json]),
-                 options: %{json: %{"operationName" => "get", "query" => "query get {name}"}},
+                 registered_options: MapSet.new([:json, :connect_options]),
+                 options: %{
+                   json: %{"operationName" => "get", "query" => "query get {name}"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1]
                }
@@ -487,8 +541,11 @@ defmodule CurlReqTest do
                  method: :patch,
                  url: URI.parse("https://example.com/employees/107"),
                  headers: %{"accept" => ["application/vnd.api+json"]},
-                 registered_options: MapSet.new([:json]),
-                 options: %{json: %{"data" => %{"attributes" => %{"first-name" => "Adam"}}}},
+                 registered_options: MapSet.new([:json, :connect_options]),
+                 options: %{
+                   json: %{"data" => %{"attributes" => %{"first-name" => "Adam"}}},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  current_request_steps: [:encode_body],
                  request_steps: [encode_body: &Req.Steps.encode_body/1]
                }
@@ -499,8 +556,11 @@ defmodule CurlReqTest do
                %Req.Request{
                  url: URI.parse("http://example.com"),
                  body: nil,
-                 registered_options: MapSet.new([:auth]),
-                 options: %{auth: {:basic, "user:pass"}},
+                 registered_options: MapSet.new([:auth, :connect_options]),
+                 options: %{
+                   auth: {:basic, "user:pass"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  current_request_steps: [:auth],
                  request_steps: [auth: &Req.Steps.auth/1]
                }
@@ -523,8 +583,12 @@ defmodule CurlReqTest do
                    "accept" => ["application/vnd.github+json"],
                    "x-github-api-version" => ["2022-11-28"]
                  },
-                 registered_options: MapSet.new([:auth, :redirect]),
-                 options: %{auth: {:bearer, "<YOUR-TOKEN>"}, redirect: true},
+                 registered_options: MapSet.new([:auth, :redirect, :connect_options]),
+                 options: %{
+                   auth: {:bearer, "<YOUR-TOKEN>"},
+                   redirect: true,
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  current_request_steps: [:auth],
                  request_steps: [auth: &Req.Steps.auth/1],
                  response_steps: [redirect: &Req.Steps.redirect/1]
@@ -536,8 +600,8 @@ defmodule CurlReqTest do
                %Req.Request{
                  url: URI.parse("http://example.com"),
                  body: nil,
-                 registered_options: MapSet.new([:compressed]),
-                 options: %{compressed: true},
+                 registered_options: MapSet.new([:compressed, :connect_options]),
+                 options: %{compressed: true, connect_options: [protocols: [:http1, :http2]]},
                  current_request_steps: [:compressed],
                  request_steps: [compressed: &Req.Steps.compressed/1]
                }
@@ -547,8 +611,8 @@ defmodule CurlReqTest do
       assert ~CURL(curl -L http://example.com) ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:redirect]),
-                 options: %{redirect: true},
+                 registered_options: MapSet.new([:redirect, :connect_options]),
+                 options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
                  response_steps: [redirect: &Req.Steps.redirect/1]
                }
     end
@@ -559,8 +623,13 @@ defmodule CurlReqTest do
                  url: URI.parse("http://example.com"),
                  headers: %{"cookie" => ["name=bar"]},
                  current_request_steps: [:auth, :encode_body],
-                 registered_options: MapSet.new([:redirect, :auth, :form]),
-                 options: %{redirect: true, auth: {:basic, "user:pass"}, form: %{"name" => "foo"}},
+                 registered_options: MapSet.new([:redirect, :auth, :form, :connect_options]),
+                 options: %{
+                   redirect: true,
+                   auth: {:basic, "user:pass"},
+                   form: %{"name" => "foo"},
+                   connect_options: [protocols: [:http1, :http2]]
+                 },
                  request_steps: [auth: &Req.Steps.auth/1, encode_body: &Req.Steps.encode_body/1],
                  response_steps: [redirect: &Req.Steps.redirect/1]
                }
@@ -572,7 +641,10 @@ defmodule CurlReqTest do
                  url: URI.parse("http://example.com"),
                  registered_options: MapSet.new([:connect_options]),
                  options: %{
-                   connect_options: [proxy: {:http, "my.proxy.com", 22225, []}]
+                   connect_options: [
+                     proxy: {:http, "my.proxy.com", 22225, []},
+                     protocols: [:http1, :http2]
+                   ]
                  }
                }
     end
@@ -587,7 +659,8 @@ defmodule CurlReqTest do
                      proxy: {:https, "my.proxy.com", 22225, []},
                      proxy_headers: [
                        {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
-                     ]
+                     ],
+                     protocols: [:http1, :http2]
                    ]
                  }
                }
@@ -603,7 +676,8 @@ defmodule CurlReqTest do
                      proxy: {:https, "my.proxy.com", 22225, []},
                      proxy_headers: [
                        {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
-                     ]
+                     ],
+                     protocols: [:http1, :http2]
                    ]
                  }
                }
@@ -626,7 +700,8 @@ defmodule CurlReqTest do
                  registered_options: MapSet.new([:connect_options]),
                  options: %{
                    connect_options: [
-                     transport_opts: [verify: :verify_none]
+                     transport_opts: [verify: :verify_none],
+                     protocols: [:http1, :http2]
                    ]
                  }
                }
@@ -637,7 +712,8 @@ defmodule CurlReqTest do
                  registered_options: MapSet.new([:connect_options]),
                  options: %{
                    connect_options: [
-                     transport_opts: [verify: :verify_none]
+                     transport_opts: [verify: :verify_none],
+                     protocols: [:http1, :http2]
                    ]
                  }
                }
@@ -651,7 +727,8 @@ defmodule CurlReqTest do
                  options: %{
                    connect_options: [
                      proxy: {:http, "my.proxy.com", 2233, []},
-                     transport_opts: [verify: :verify_none]
+                     transport_opts: [verify: :verify_none],
+                     protocols: [:http1, :http2]
                    ]
                  }
                }
@@ -661,13 +738,51 @@ defmodule CurlReqTest do
       assert ~CURL(curl -A "some_user_agent/0.1.0" http://example.com) ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
 
       assert ~CURL(curl --user-agent "some_user_agent/0.1.0" http://example.com) ==
                %Req.Request{
                  url: URI.parse("http://example.com"),
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
+               }
+    end
+
+    test "protocols flag" do
+      assert ~CURL(curl --http1.0 -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com")
+               }
+
+      assert ~CURL(curl --http1.1 -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com")
+               }
+
+      assert ~CURL(curl --http2 -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
+               }
+
+      assert ~CURL(curl --http1.1 --http2 -X GET http://example.com) ==
+               %Req.Request{
+                 url: URI.parse("http://example.com"),
+                 registered_options: MapSet.new([:connect_options]),
+                 options: %{
+                   connect_options: [protocols: [:http1, :http2]]
+                 }
                }
     end
   end
@@ -683,8 +798,8 @@ defmodule CurlReqTest do
       assert curl == %Req.Request{
                method: :post,
                url: URI.parse("https://example.com"),
-               registered_options: MapSet.new([:redirect]),
-               options: %{redirect: true},
+               registered_options: MapSet.new([:redirect, :connect_options]),
+               options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
                response_steps: [redirect: &Req.Steps.redirect/1]
              }
     end
@@ -700,8 +815,8 @@ defmodule CurlReqTest do
       assert curl == %Req.Request{
                method: :post,
                url: URI.parse("https://example.com"),
-               registered_options: MapSet.new([:redirect]),
-               options: %{redirect: true},
+               registered_options: MapSet.new([:redirect, :connect_options]),
+               options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
                response_steps: [redirect: &Req.Steps.redirect/1]
              }
     end
