@@ -227,6 +227,29 @@ defmodule CurlReqTest do
                )
                |> CurlReq.to_curl(flags: :long)
     end
+
+    test "protocols" do
+      assert ~s(curl --compressed -0 --http1.1 -X GET http://example.com) ==
+               Req.new(
+                 url: "http://example.com",
+                 connect_options: [protocols: [:http1]]
+               )
+               |> CurlReq.to_curl()
+
+      assert ~s(curl --compressed -X GET http://example.com) ==
+               Req.new(
+                 url: "http://example.com",
+                 connect_options: [protocols: [:http2]]
+               )
+               |> CurlReq.to_curl()
+
+      assert ~s(curl --compressed -X GET http://example.com) ==
+               Req.new(
+                 url: "http://example.com",
+                 connect_options: [protocols: [:http1, :http2]]
+               )
+               |> CurlReq.to_curl()
+    end
   end
 
   describe "from_curl" do
