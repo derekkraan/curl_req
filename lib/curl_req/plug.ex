@@ -2,9 +2,56 @@ defmodule CurlReq.Plug do
   alias Plug.Conn
   alias CurlReq.Request
 
+  require Logger
+
   @moduledoc since: "0.101.0"
 
   @behaviour CurlReq.Request
+
+  def init(opts), do: opts
+
+  @doc """
+
+  Logs the request as a cURL command
+
+  ```elixir
+  plug CurlReq.Plug
+  ```
+
+
+  Add a filter function
+
+  ```elixir
+  def curl_filter(conn) do
+    conn.path_info == ["admin"]
+  end
+
+  pipeline :browser do
+    ...
+    plug CurlReq.Plug, log_level: :error, filter: &__MODULE__.curl_filter/1
+  end
+  ```
+  """
+
+  def call(%Plug.Conn{} = conn, opts) do
+    log_level = opts[:log_level] || :debug
+    metadata = opts[:log_metadata] || []
+    filter = opts[:filter] || fn _conn -> true end
+
+    if filter.(conn) do
+      Logger.log(
+        log_level,
+        fn ->
+          conn
+          |> CurlReq.Plug.decode()
+          |> CurlReq.Curl.encode()
+        end,
+        metadata
+      )
+    end
+
+    conn
+  end
 
   @impl CurlReq.Request
   def decode(%Conn{} = conn, _opts \\ []) do
@@ -52,10 +99,11 @@ defmodule CurlReq.Plug do
 
   @impl CurlReq.Request
   def encode(
-        %Request{url: uri, body: body, headers: headers, method: method} = _request,
+        %Request{url: uri, headers: headers, method: method} = request,
         _opts \\ []
       ) do
     %Conn{
+      scheme: uri.scheme |> String.to_existing_atom(),
       host: uri.host,
       query_string: uri.query,
       port: uri.port,
@@ -65,7 +113,16 @@ defmodule CurlReq.Plug do
         for {key, list} <- headers do
           {key, Enum.join(list, ",")}
         end,
-      body_params: body
+      body_params: get_body(request)
     }
+  end
+
+  defp get_body(%Request{method: method, body: body})
+       when method in [:post, :put, :patch, :delete] do
+    body
+  end
+
+  defp get_body(%Request{method: _method, body: _body}) do
+    %Plug.Conn.Unfetched{aspect: :body_params}
   end
 end
