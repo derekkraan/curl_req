@@ -72,7 +72,7 @@ defmodule CurlReq.Req do
   @spec encode(CurlReq.Request.t()) :: Req.Request.t()
   def encode(%CurlReq.Request{} = request, _opts \\ []) do
     req =
-      %Req.Request{}
+      Req.new()
       |> Req.merge(url: request.url)
       |> Req.merge(method: request.method)
 
