@@ -10,6 +10,8 @@ defmodule CurlReq.Request do
   @doc "decode from #{__MODULE__} to the destination type"
   @callback decode(__MODULE__.t(), opts :: Keyword.t()) :: term()
 
+  @protocols [:http1_0, :http1_1, :http2]
+
   @type t() :: %__MODULE__{
           user_agent: user_agent(),
           headers: header(),
@@ -24,7 +26,8 @@ defmodule CurlReq.Request do
           encoding: encoding(),
           body: term(),
           raw_body: String.t(),
-          insecure: boolean()
+          insecure: boolean(),
+          protocols: protocols()
         }
 
   @type user_agent() :: :curl | :req | String.t()
@@ -35,6 +38,7 @@ defmodule CurlReq.Request do
   @type encoding() :: :raw | :form | :json
   @type method() :: :get | :head | :put | :post | :delete | :patch
   @type compression() :: :none | :gzip | :br | :zstd
+  @type protocols() :: :http1_0 | :http1_1 | :http2
 
   @derive {Inspect, except: [:auth]}
   defstruct user_agent: :curl,
@@ -51,7 +55,8 @@ defmodule CurlReq.Request do
             encoding: :raw,
             body: nil,
             raw_body: nil,
-            insecure: false
+            insecure: false,
+            protocols: [:http1_1, :http2]
 
   @doc """
   Puts the header into the CurlReq.Request struct. Special headers like encoding, authorization or user-agent are stored in their respective field in the #{__MODULE__} struct instead of a general header.
@@ -460,5 +465,14 @@ defmodule CurlReq.Request do
   def put_user_agent(%__MODULE{} = request, user_agent)
       when user_agent in [:curl, :req] or is_binary(user_agent) do
     %{request | user_agent: user_agent}
+  end
+
+  @spec put_protocols(t(), [protocols()]) :: t()
+  def put_protocols(%__MODULE__{} = request, protocols) when is_list(protocols) do
+    if not Enum.all?(protocols, fn proto -> proto in @protocols end) do
+      raise "Protocol must be one of #{inspect(@protocols)}, got: #{inspect(protocols)}}"
+    end
+
+    %{request | protocols: protocols |> Enum.uniq() |> Enum.sort()}
   end
 end

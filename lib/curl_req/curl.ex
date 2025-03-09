@@ -28,7 +28,11 @@ defmodule CurlReq.Curl do
     show_error: :boolean,
     output: :string,
     remote_name: :boolean,
-    verbose: :boolean
+    verbose: :boolean,
+    "http1.0": :boolean,
+    "http1.1": :boolean,
+    http2: :boolean,
+    http2_prior_knowledge: :boolean
   ]
 
   @aliases [
@@ -50,7 +54,8 @@ defmodule CurlReq.Curl do
     S: :show_error,
     o: :output,
     O: :remote_name,
-    v: :verbose
+    v: :verbose,
+    "0": :"http1.0"
   ]
 
   @doc """
@@ -150,6 +155,7 @@ defmodule CurlReq.Curl do
     |> add_insecure(options)
     |> add_user_agent(options)
     |> add_method(options)
+    |> add_protocols(options)
     |> configure_redirects(options)
   end
 
@@ -259,6 +265,24 @@ defmodule CurlReq.Curl do
 
   defp add_user_agent(request, options) do
     CurlReq.Request.put_user_agent(request, options[:user_agent])
+  end
+
+  defp add_protocols(request, options) do
+    http1_0 = Keyword.get(options, :"http1.0", false)
+    http1_1 = Keyword.get(options, :"http1.1", false)
+    http2 = Keyword.get(options, :http2, false)
+    http2_prior_knowledge = Keyword.get(options, :http2_prior_knowledge, false)
+
+    protos = []
+    protos = if http1_0, do: [:http1_0 | protos], else: protos
+    protos = if http1_1, do: [:http1_1 | protos], else: protos
+    protos = if http2, do: [:http2, :http1_1 | protos], else: protos
+    protos = if http2_prior_knowledge, do: [:http2], else: protos
+
+    # cURL default
+    protos = if protos == [], do: [:http1_1, :http2], else: protos
+
+    CurlReq.Request.put_protocols(request, protos)
   end
 
   defp configure_redirects(request, options) do
@@ -383,11 +407,20 @@ defmodule CurlReq.Curl do
 
     insecure = if request.insecure, do: [insecure_flag(flag_style)], else: []
 
+    protocols =
+      if :http2 in request.protocols do
+        # don't add flags for default behavior
+        []
+      else
+        for proto <- request.protocols, do: protocol_flag(flag_style, proto)
+      end
+
     url = [" ", request.url |> to_string() |> escape()]
 
     IO.iodata_to_binary([
       "curl",
       compressed,
+      protocols,
       insecure,
       auth,
       headers,
@@ -459,6 +492,11 @@ defmodule CurlReq.Curl do
 
   defp insecure_flag(:short), do: " -k"
   defp insecure_flag(:long), do: " --insecure"
+
+  defp protocol_flag(:short, :http1_0), do: " -0"
+  defp protocol_flag(:long, :http1_0), do: " --http1.0"
+  defp protocol_flag(_, :http1_1), do: " --http1.1"
+  defp protocol_flag(_, :http2), do: " --http2"
 
   defp user_agent_flag(:short, value), do: [" -A ", escape(value)]
   defp user_agent_flag(:long, value), do: [" --user-agent ", escape(value)]

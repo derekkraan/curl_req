@@ -143,13 +143,29 @@ defmodule CurlReq do
   ## Examples
 
       iex> CurlReq.from_curl("curl https://www.example.com")
-      %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
+      %Req.Request{
+        method: :get, 
+        url: URI.parse("https://www.example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
 
       iex> CurlReq.from_curl("curl -I https://example.com")
-      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+      %Req.Request{
+        method: :head, 
+        url: URI.parse("https://example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
 
       iex> CurlReq.from_curl("curl -b cookie_key=cookie_val https://example.com")
-      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
+      %Req.Request{
+        method: :get, 
+        headers: %{"cookie" => ["cookie_key=cookie_val"]}, 
+        url: URI.parse("https://example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
   """
   @doc since: "0.98.4"
 
@@ -165,7 +181,7 @@ defmodule CurlReq do
   Remember to
 
   ```elixir
-  import CurlReq
+  require CurlReq
   ```
 
   to use the custom sigil.
@@ -173,13 +189,29 @@ defmodule CurlReq do
   ## Examples
 
       iex> ~CURL(curl "https://www.example.com")
-      %Req.Request{method: :get, url: URI.parse("https://www.example.com")}
+      %Req.Request{
+        method: :get, 
+        url: URI.parse("https://www.example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
 
       iex> ~CURL(curl -I "https://example.com")
-      %Req.Request{method: :head, url: URI.parse("https://example.com")}
+      %Req.Request{
+        method: :head, 
+        url: URI.parse("https://example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
 
       iex> ~CURL(curl -b "cookie_key=cookie_val" "https://example.com")
-      %Req.Request{method: :get, headers: %{"cookie" => ["cookie_key=cookie_val"]}, url: URI.parse("https://example.com")}
+      %Req.Request{
+        method: :get, 
+        headers: %{"cookie" => ["cookie_key=cookie_val"]}, 
+        url: URI.parse("https://example.com"), 
+        registered_options: MapSet.new([:connect_options]), 
+        options: %{connect_options: [protocols: [:http1, :http2]]}
+      }
   """
   defmacro sigil_CURL(curl_command, modifiers)
 

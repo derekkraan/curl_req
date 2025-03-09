@@ -90,4 +90,17 @@ defmodule CurlReq.RequestTest do
       assert %{"foo" => "bar"} = request.body
     end
   end
+
+  describe "put_protocols/2" do
+    for proto <- [:http1_0, :http1_1, :http2] do
+      @tag proto: proto
+      test "set #{inspect(proto)}", %{proto: proto} do
+        request =
+          %Request{}
+          |> put_protocols([proto])
+
+        assert request.protocols == [proto]
+      end
+    end
+  end
 end
