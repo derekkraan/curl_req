@@ -29,6 +29,12 @@ defmodule CurlReqTest do
                |> CurlReq.to_curl()
     end
 
+    test "escape url when needed" do
+      assert ~s(curl --compressed -X GET "https://example.com/fact?") ==
+               Req.new(url: "/fact?", base_url: "https://example.com/")
+               |> CurlReq.to_curl()
+    end
+
     test "cookies get extracted from header" do
       assert Req.new(url: "http://example.com", headers: %{"cookie" => ["name1=value1"]})
              |> CurlReq.to_curl() ==
