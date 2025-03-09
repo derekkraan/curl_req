@@ -6,9 +6,9 @@ defmodule CurlReq.Request do
   """
 
   @doc "encode from the custom type to #{__MODULE__}"
-  @callback encode(term(), Keyword.t()) :: __MODULE__.t()
+  @callback encode(source :: term(), opts :: Keyword.t()) :: __MODULE__.t()
   @doc "decode from #{__MODULE__} to the destination type"
-  @callback decode(__MODULE__.t(), Keyword.t()) :: term()
+  @callback decode(__MODULE__.t(), opts :: Keyword.t()) :: term()
 
   @protocols [:http1_0, :http1_1, :http2]
 
@@ -150,7 +150,7 @@ defmodule CurlReq.Request do
       "some body"
 
       iex> request = %CurlReq.Request{} |> CurlReq.Request.put_body(%{some: "body"})
-      iex> request.body
+      iex> request.raw_body
       %{some: "body"}
 
       iex> request = %CurlReq.Request{} 
@@ -181,8 +181,13 @@ defmodule CurlReq.Request do
     %{request | body: form, raw_body: input}
   end
 
-  def put_body(%__MODULE__{encoding: :raw} = request, input) do
+  def put_body(%__MODULE__{encoding: :raw} = request, input)
+      when is_binary(input) or is_list(input) do
     %{request | body: input, raw_body: input}
+  end
+
+  def put_body(%__MODULE__{encoding: :raw} = request, input) do
+    %{request | body: nil, raw_body: input}
   end
 
   defp decode_json(nil), do: nil

@@ -28,7 +28,8 @@ defmodule CurlReq.MixProject do
       {:req, "~> 0.4.0 or ~> 0.5.0"},
       {:jason, "~> 1.4"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
-      {:blend, "~> 0.4.1", only: :dev}
+      {:blend, "~> 0.4.1", only: :dev},
+      {:plug, "~> 1.16"}
     ]
   end
 

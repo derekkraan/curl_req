@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.101.0
+
+### Enhancements
+
+- Added `Plug` module to encode/decode from/to plug. Added plug to put in a normal Phoenix pipeline to log requests as cURL commands
+
 ## 0.100.0
 
 ### Breaking Changes

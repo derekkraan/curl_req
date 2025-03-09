@@ -415,7 +415,7 @@ defmodule CurlReq.Curl do
         for proto <- request.protocols, do: protocol_flag(flag_style, proto)
       end
 
-    url = [" ", to_string(request.url)]
+    url = [" ", request.url |> to_string() |> escape()]
 
     IO.iodata_to_binary([
       "curl",
@@ -457,8 +457,13 @@ defmodule CurlReq.Curl do
   defp header_flag(:short, value), do: [" -H ", escape(value)]
   defp header_flag(:long, value), do: [" --header ", escape(value)]
 
-  defp data_flag(:short, value), do: [" -d ", escape(value)]
-  defp data_flag(:long, value), do: [" --data ", escape(value)]
+  defp data_flag(:short, value) when is_binary(value) or is_list(value),
+    do: [" -d ", escape(value)]
+
+  defp data_flag(:long, value) when is_binary(value) or is_list(value),
+    do: [" --data ", escape(value)]
+
+  defp data_flag(_, value), do: raise(ArgumentError, "Cannot encode #{inspect(value)}")
 
   defp head_flag(:short), do: " -I"
   defp head_flag(:long), do: " --head"
