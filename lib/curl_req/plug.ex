@@ -19,16 +19,21 @@ defmodule CurlReq.Plug do
   ```
 
 
-  Add a filter function
+  You can specify a filter function to only log certain requests. 
+
+  For example don't log routes which start with `/admin`
 
   ```elixir
-  def curl_filter(conn) do
-    conn.path_info == ["admin"]
+  def reject_admin_routes(conn) do
+    case conn do
+      %{path_info: ["admin" | _]} -> false
+      _ -> true
+    end
   end
 
   pipeline :browser do
     ...
-    plug CurlReq.Plug, log_level: :error, filter: &__MODULE__.curl_filter/1
+    plug CurlReq.Plug, log_level: :error, filter: &__MODULE__.reject_admin_routes/1
   end
   ```
   """
@@ -37,6 +42,11 @@ defmodule CurlReq.Plug do
     log_level = opts[:log_level] || :debug
     metadata = opts[:log_metadata] || []
     filter = opts[:filter] || fn _conn -> true end
+
+    if not is_function(filter, 1) do
+      raise ArgumentError,
+            "Filter has to be a 1-arity function which accepts a Plug.Conn struct and returns a boolean"
+    end
 
     if filter.(conn) do
       Logger.log(
