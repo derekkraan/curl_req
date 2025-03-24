@@ -1,5 +1,5 @@
 defmodule CurlReqTest do
-  use ExUnit.Case, async: true
+  use CurlReq.Case, async: true
 
   doctest CurlReq, import: true
 
@@ -416,12 +416,10 @@ defmodule CurlReqTest do
       request =
         ~CURL(curl --header 'Cookie: TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf; sapphire=1; visitorId=0184E4601D5A020183FFBB133 80347CE; GuestLocation=33196|25.660|-80.440|FL|US' -X GET https://example.com)
 
-      [cookie] = request.headers["cookie"]
-
-      assert String.contains?(cookie, "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf")
-      assert String.contains?(cookie, "sapphire=1")
-      assert String.contains?(cookie, "visitorId=0184E4601D5A020183FFBB133 80347CE")
-      assert String.contains?(cookie, "GuestLocation=33196|25.660|-80.440|FL|US")
+      assert_cookie(request, "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf")
+      assert_cookie(request, "sapphire=1")
+      assert_cookie(request, "visitorId=0184E4601D5A020183FFBB133 80347CE")
+      assert_cookie(request, "GuestLocation=33196|25.660|-80.440|FL|US")
     end
 
     test "multiple headers with body" do
