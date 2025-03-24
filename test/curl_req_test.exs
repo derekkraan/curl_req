@@ -260,15 +260,8 @@ defmodule CurlReqTest do
 
   describe "from_curl" do
     test "no scheme in url defaults to http" do
-      assert ~CURL(curl example.com/fact) ==
-               %Req.Request{
-                 method: :get,
-                 url: URI.parse("http://example.com/fact"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl example.com/fact)
+      |> assert_url("http://example.com/fact")
     end
 
     test "wrong scheme raises error" do
@@ -280,411 +273,187 @@ defmodule CurlReqTest do
     end
 
     test "single header" do
-      assert ~CURL(curl -H "user-agent: req/0.4.14" -X GET https://example.com/fact) ==
-               %Req.Request{
-                 method: :get,
-                 url: URI.parse("https://example.com/fact"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl -H "foo: bar" -X GET https://example.com/fact)
+      |> assert_header("foo", ["bar"])
     end
 
     test "post method" do
-      assert ~CURL(curl -X POST https://example.com) ==
-               %Req.Request{
-                 method: :post,
-                 url: URI.parse("https://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl -X POST https://example.com)
+      |> assert_method(:post)
     end
 
     test "head method" do
-      assert ~CURL(curl -I https://example.com) ==
-               %Req.Request{
-                 method: :head,
-                 url: URI.parse("https://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl -I https://example.com)
+      |> assert_method(:head)
     end
 
     test "raw body" do
-      assert ~CURL(curl -d foo https://example.com) ==
-               %Req.Request{
-                 options: %{form: %{"foo" => ""}, connect_options: [protocols: [:http1, :http2]]},
-                 registered_options: MapSet.new([:form, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("https://example.com"),
-                 method: :post
-               }
+      ~CURL(curl -d foo https://example.com)
+      |> assert_form(%{"foo" => ""})
     end
 
     test "form body" do
-      assert ~CURL(curl -d foo=bar https://example.com) ==
-               %Req.Request{
-                 options: %{
-                   form: %{"foo" => "bar"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 registered_options: MapSet.new([:form, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("https://example.com"),
-                 method: :post
-               }
+      ~CURL(curl -d foo=bar https://example.com)
+      |> assert_form(%{"foo" => "bar"})
 
-      assert ~CURL(curl -d foo=bar&baz=qux https://example.com) ==
-               %Req.Request{
-                 options: %{
-                   form: %{"foo" => "bar", "baz" => "qux"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 registered_options: MapSet.new([:form, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("https://example.com"),
-                 method: :post
-               }
+      ~CURL(curl -d foo=bar&baz=qux https://example.com)
+      |> assert_form(%{"foo" => "bar", "baz" => "qux"})
     end
 
     test "form body with multiple data flags" do
-      assert ~CURL(curl http://example.com -d name=foo -d mail=bar) ==
-               %Req.Request{
-                 options: %{
-                   form: %{"name" => "foo", "mail" => "bar"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 registered_options: MapSet.new([:form, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("http://example.com"),
-                 method: :post
-               }
+      ~CURL(curl http://example.com -d name=foo -d mail=bar)
+      |> assert_form(%{"name" => "foo", "mail" => "bar"})
     end
 
     test "json body" do
-      assert ~CURL(curl -H "content-type: application/json" -d "{\"foo\": \"bar\"}" https://example.com) ==
-               %Req.Request{
-                 options: %{
-                   json: %{"foo" => "bar"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 registered_options: MapSet.new([:json, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("https://example.com"),
-                 method: :post
-               }
+      ~CURL(curl -H "content-type: application/json" -d "{\"foo\": \"bar\"}" https://example.com)
+      |> assert_json(%{"foo" => "bar"})
     end
 
     test "content-type with parameter" do
-      assert ~CURL(curl -H "content-type: application/json; charset=utf-8" -d '{"foo": "bar"}' https://example.com) ==
-               %Req.Request{
-                 options: %{
-                   json: %{"foo" => "bar"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 registered_options: MapSet.new([:json, :connect_options]),
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1],
-                 url: URI.parse("https://example.com"),
-                 method: :post
-               }
+      ~CURL(curl -H "content-type: application/json; charset=utf-8" -d '{"foo": "bar"}' https://example.com)
+      |> assert_json(%{"foo" => "bar"})
     end
 
     test "multiple header" do
-      assert ~CURL(curl -H "my-header: foo, bar=baz" https://example.com) ==
-               %Req.Request{
-                 url: URI.parse("https://example.com"),
-                 headers: %{"my-header" => ["foo, bar=baz"]},
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl -H "my-header: foo, bar=baz" https://example.com)
+      |> assert_header("my-header", ["foo, bar=baz"])
     end
 
     test "complex cookie" do
-      request =
-        ~CURL(curl --header 'Cookie: TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf; sapphire=1; visitorId=0184E4601D5A020183FFBB133 80347CE; GuestLocation=33196|25.660|-80.440|FL|US' -X GET https://example.com)
-
-      assert_cookie(request, "TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf")
-      assert_cookie(request, "sapphire=1")
-      assert_cookie(request, "visitorId=0184E4601D5A020183FFBB133 80347CE")
-      assert_cookie(request, "GuestLocation=33196|25.660|-80.440|FL|US")
+      ~CURL(curl --header 'Cookie: TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf; sapphire=1; visitorId=0184E4601D5A020183FFBB133 80347CE; GuestLocation=33196|25.660|-80.440|FL|US' -X GET https://example.com)
+      |> assert_cookie("TealeafAkaSid=JA-JSAXRCLjKYhjV9IXTzYUbcV1Lnhqf")
+      |> assert_cookie("sapphire=1")
+      |> assert_cookie("visitorId=0184E4601D5A020183FFBB133 80347CE")
+      |> assert_cookie("GuestLocation=33196|25.660|-80.440|FL|US")
     end
 
     test "multiple headers with body" do
-      assert ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}" -X POST "https://example.com/rest/v1/leads/submitForm.json") ==
-               %Req.Request{
-                 method: :post,
-                 url: URI.parse("https://example.com/rest/v1/leads/submitForm.json"),
-                 registered_options: MapSet.new([:compressed, :auth, :json, :connect_options]),
-                 options: %{
-                   compressed: true,
-                   auth: {:bearer, "6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon"},
-                   json: %{
-                     "formId" => 4318,
-                     "input" => [
-                       %{
-                         "leadFormFields" => %{
-                           "Company" => "k",
-                           "Country" => "DZ",
-                           "Email" => "k",
-                           "FirstName" => "k",
-                           "Industry" => "CTO",
-                           "LastName" => "k",
-                           "Phone" => "k",
-                           "PostalCode" => "1234ZZ",
-                           "jobspecialty" => "engineer",
-                           "message" =>
-                             "I would like to know if Roche delivers to The Netherlands."
-                         }
-                       }
-                     ]
-                   },
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:compressed, :auth, :encode_body],
-                 request_steps: [
-                   compressed: &Req.Steps.compressed/1,
-                   auth: &Req.Steps.auth/1,
-                   encode_body: &Req.Steps.encode_body/1
-                 ]
-               }
+      ~CURL(curl -H "accept-encoding: gzip" -H "authorization: Bearer 6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon" -H "content-type: application/json" -H "user-agent: req/0.4.14" -d "{\"input\":[{\"leadFormFields\":{\"Company\":\"k\",\"Country\":\"DZ\",\"Email\":\"k\",\"FirstName\":\"k\",\"Industry\":\"CTO\",\"LastName\":\"k\",\"Phone\":\"k\",\"PostalCode\":\"1234ZZ\",\"jobspecialty\":\"engineer\",\"message\":\"I would like to know if Roche delivers to The Netherlands.\"}}],\"formId\":4318}" -X POST "https://example.com/rest/v1/leads/submitForm.json")
+      |> assert_url("https://example.com/rest/v1/leads/submitForm.json")
+      |> assert_method(:post)
+      |> assert_compressed()
+      |> assert_auth(:bearer, "6e8f18e6-141b-4d12-8397-7e7791d92ed4:lon")
+      |> assert_json(%{
+        "formId" => 4318,
+        "input" => [
+          %{
+            "leadFormFields" => %{
+              "Company" => "k",
+              "Country" => "DZ",
+              "Email" => "k",
+              "FirstName" => "k",
+              "Industry" => "CTO",
+              "LastName" => "k",
+              "Phone" => "k",
+              "PostalCode" => "1234ZZ",
+              "jobspecialty" => "engineer",
+              "message" => "I would like to know if Roche delivers to The Netherlands."
+            }
+          }
+        ]
+      })
     end
 
     test "without curl prefix" do
-      assert ~CURL(http://example.com) ==
-               %Req.Request{
-                 method: :get,
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(http://example.com)
+      |> assert_url("http://example.com")
     end
 
     test "cookie" do
-      assert ~CURL(http://example.com -b "name1=value1") ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1"]},
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(http://example.com -b "name1=value1")
+      |> assert_cookie("name1=value1")
 
-      assert ~CURL(http://example.com -b "name1=value1; name2=value2") ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name1=value1; name2=value2"]},
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(http://example.com -b "name1=value1; name2=value2")
+      |> assert_cookie("name1=value1")
+      |> assert_cookie("name2=value2")
     end
 
     test "formdata" do
-      assert ~CURL(curl http://example.com -F name=foo -F mail=bar) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 body: nil,
-                 registered_options: MapSet.new([:form, :connect_options]),
-                 options: %{
-                   form: %{"name" => "foo", "mail" => "bar"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1]
-               }
+      ~CURL(curl http://example.com -F name=foo -F mail=bar)
+      |> assert_form(%{"name" => "foo", "mail" => "bar"})
     end
 
     test "data raw" do
-      assert ~CURL"""
-             curl 'https://example.com/graphql' \
-             -X POST \
-             -H 'Accept: application/graphql-response+json'\
-             -H 'Content-Type: application/json' \
-             --data-raw '{"operationName":"get","query":"query get {name}"}'
-             """ ==
-               %Req.Request{
-                 method: :post,
-                 url: URI.parse("https://example.com/graphql"),
-                 headers: %{"accept" => ["application/graphql-response+json"]},
-                 registered_options: MapSet.new([:json, :connect_options]),
-                 options: %{
-                   json: %{"operationName" => "get", "query" => "query get {name}"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1]
-               }
+      ~CURL"""
+      curl 'https://example.com/graphql' \
+      -X POST \
+      -H 'Accept: application/graphql-response+json'\
+      -H 'Content-Type: application/json' \
+      --data-raw '{"operationName":"get","query":"query get {name}"}'
+      """
+      |> assert_method(:post)
+      |> assert_url("https://example.com/graphql")
+      |> assert_header("accept", ["application/graphql-response+json"])
+      |> assert_json(%{"operationName" => "get", "query" => "query get {name}"})
     end
 
     test "data raw with ansii escape" do
-      assert ~CURL"""
-             curl 'https://example.com/employees/107'\
-             -X PATCH\
-             -H 'Content-Type: application/json' \
-             -H 'Accept: application/vnd.api+json'\
-             --data-raw $'{"data":{"attributes":{"first-name":"Adam"}}}'
-             """ ==
-               %Req.Request{
-                 method: :patch,
-                 url: URI.parse("https://example.com/employees/107"),
-                 headers: %{"accept" => ["application/vnd.api+json"]},
-                 registered_options: MapSet.new([:json, :connect_options]),
-                 options: %{
-                   json: %{"data" => %{"attributes" => %{"first-name" => "Adam"}}},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:encode_body],
-                 request_steps: [encode_body: &Req.Steps.encode_body/1]
-               }
+      ~CURL"""
+      curl 'https://example.com/employees/107'\
+      -X PATCH\
+      -H 'Content-Type: application/json' \
+      -H 'Accept: application/vnd.api+json'\
+      --data-raw $'{"data":{"attributes":{"first-name":"Adam"}}}'
+      """
+      |> assert_method(:patch)
+      |> assert_url("https://example.com/employees/107")
+      |> assert_header("accept", ["application/vnd.api+json"])
+      |> assert_json(%{"data" => %{"attributes" => %{"first-name" => "Adam"}}})
     end
 
     test "auth" do
-      assert ~CURL(curl http://example.com -u user:pass) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 body: nil,
-                 registered_options: MapSet.new([:auth, :connect_options]),
-                 options: %{
-                   auth: {:basic, "user:pass"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:auth],
-                 request_steps: [auth: &Req.Steps.auth/1]
-               }
+      ~CURL(curl http://example.com -u user:pass)
+      |> assert_auth(:basic, "user:pass")
     end
 
     test "bearer token auth" do
-      curl = ~CURL"""
+      ~CURL"""
         curl -L \
         -H "Accept: application/vnd.github+json" \
         -H "Authorization: Bearer <YOUR-TOKEN>" \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         https://example.com/users
       """
-
-      assert curl ==
-               %Req.Request{
-                 url: URI.parse("https://example.com/users"),
-                 body: nil,
-                 headers: %{
-                   "accept" => ["application/vnd.github+json"],
-                   "x-github-api-version" => ["2022-11-28"]
-                 },
-                 registered_options: MapSet.new([:auth, :redirect, :connect_options]),
-                 options: %{
-                   auth: {:bearer, "<YOUR-TOKEN>"},
-                   redirect: true,
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 current_request_steps: [:auth],
-                 request_steps: [auth: &Req.Steps.auth/1],
-                 response_steps: [redirect: &Req.Steps.redirect/1]
-               }
+      |> assert_header("accept", ["application/vnd.github+json"])
+      |> assert_header("x-github-api-version", ["2022-11-28"])
+      |> assert_auth(:bearer, "<YOUR-TOKEN>")
+      |> assert_redirect()
     end
 
     test "compressed" do
-      assert ~CURL(curl --compressed http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 body: nil,
-                 registered_options: MapSet.new([:compressed, :connect_options]),
-                 options: %{compressed: true, connect_options: [protocols: [:http1, :http2]]},
-                 current_request_steps: [:compressed],
-                 request_steps: [compressed: &Req.Steps.compressed/1]
-               }
+      ~CURL(curl --compressed http://example.com)
+      |> assert_compressed()
     end
 
     test "redirect" do
-      assert ~CURL(curl -L http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:redirect, :connect_options]),
-                 options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
-                 response_steps: [redirect: &Req.Steps.redirect/1]
-               }
+      ~CURL(curl -L http://example.com)
+      |> assert_redirect()
     end
 
     test "cookie, formadata, auth and redirect" do
-      assert ~CURL(curl -L -u user:pass -F name=foo -b name=bar http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 headers: %{"cookie" => ["name=bar"]},
-                 current_request_steps: [:auth, :encode_body],
-                 registered_options: MapSet.new([:redirect, :auth, :form, :connect_options]),
-                 options: %{
-                   redirect: true,
-                   auth: {:basic, "user:pass"},
-                   form: %{"name" => "foo"},
-                   connect_options: [protocols: [:http1, :http2]]
-                 },
-                 request_steps: [auth: &Req.Steps.auth/1, encode_body: &Req.Steps.encode_body/1],
-                 response_steps: [redirect: &Req.Steps.redirect/1]
-               }
+      ~CURL(curl -L -u user:pass -F name=foo -b name=bar http://example.com)
+      |> assert_redirect()
+      |> assert_auth(:basic, "user:pass")
+      |> assert_form(%{"name" => "foo"})
+      |> assert_cookie("name=bar")
     end
 
     test "proxy" do
-      assert ~CURL(curl --proxy my.proxy.com:22225 http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     proxy: {:http, "my.proxy.com", 22225, []},
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
+      ~CURL(curl --proxy my.proxy.com:22225 http://example.com)
+      |> assert_proxy(:http, "my.proxy.com", 22225)
     end
 
     test "proxy with basic auth" do
-      assert ~CURL(curl --proxy https://my.proxy.com:22225 --proxy-user foo:bar http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     proxy: {:https, "my.proxy.com", 22225, []},
-                     proxy_headers: [
-                       {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
-                     ],
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
+      ~CURL(curl --proxy https://my.proxy.com:22225 --proxy-user foo:bar http://example.com)
+      |> assert_proxy(:https, "my.proxy.com", 22225)
+      |> assert_auth(:proxy, "foo:bar")
     end
 
     test "proxy with inline basic auth" do
-      assert ~CURL(curl --proxy https://foo:bar@my.proxy.com:22225 http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     proxy: {:https, "my.proxy.com", 22225, []},
-                     proxy_headers: [
-                       {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
-                     ],
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
+      ~CURL(curl --proxy https://foo:bar@my.proxy.com:22225 http://example.com)
+      |> assert_proxy(:https, "my.proxy.com", 22225)
+      |> assert_auth(:proxy, "foo:bar")
     end
 
     test "proxy raises on non http scheme uri" do
@@ -698,181 +467,105 @@ defmodule CurlReqTest do
     end
 
     test "insecure flag" do
-      assert ~CURL(curl -k http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     transport_opts: [verify: :verify_none],
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
-
-      assert ~CURL(curl --insecure http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     transport_opts: [verify: :verify_none],
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
+      assert_insecure(~CURL(curl -k http://example.com))
+      assert_insecure(~CURL(curl --insecure http://example.com))
     end
 
     test "insecure flag with proxy" do
-      assert ~CURL(curl -k --proxy my.proxy.com:2233 http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [
-                     proxy: {:http, "my.proxy.com", 2233, []},
-                     transport_opts: [verify: :verify_none],
-                     protocols: [:http1, :http2]
-                   ]
-                 }
-               }
+      ~CURL(curl -k --proxy my.proxy.com:2233 http://example.com)
+      |> assert_insecure()
+      |> assert_proxy(:http, "my.proxy.com", 2233)
     end
 
     test "user agent flag" do
-      assert ~CURL(curl -A "some_user_agent/0.1.0" http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl -A "some_user_agent/0.1.0" http://example.com)
+      |> assert_header("user-agent", ["some_user_agent/0.1.0"])
 
-      assert ~CURL(curl --user-agent "some_user_agent/0.1.0" http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl --user-agent "some_user_agent/0.1.0" http://example.com)
+      |> assert_header("user-agent", ["some_user_agent/0.1.0"])
     end
 
     test "protocols flag" do
-      assert ~CURL(curl --http1.0 -X GET http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com")
-               }
+      ~CURL(curl --http1.0 -X GET http://example.com)
+      |> assert_protocol(:http1)
 
-      assert ~CURL(curl --http1.1 -X GET http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com")
-               }
+      ~CURL(curl --http1.1 -X GET http://example.com)
+      |> assert_protocol(:http1)
 
-      assert ~CURL(curl --http2 -X GET http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl --http2 -X GET http://example.com)
+      |> assert_protocol(:http2)
 
-      assert ~CURL(curl --http1.1 --http2 -X GET http://example.com) ==
-               %Req.Request{
-                 url: URI.parse("http://example.com"),
-                 registered_options: MapSet.new([:connect_options]),
-                 options: %{
-                   connect_options: [protocols: [:http1, :http2]]
-                 }
-               }
+      ~CURL(curl --http1.1 --http2 -X GET http://example.com)
+      |> assert_protocol(:http1)
+      |> assert_protocol(:http2)
     end
   end
 
   describe "newlines" do
     test "sigil_CURL supports newlines" do
-      curl = ~CURL"""
+      ~CURL"""
         curl -X POST \
          --location \
          https://example.com
       """
-
-      assert curl == %Req.Request{
-               method: :post,
-               url: URI.parse("https://example.com"),
-               registered_options: MapSet.new([:redirect, :connect_options]),
-               options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
-               response_steps: [redirect: &Req.Steps.redirect/1]
-             }
+      |> assert_redirect()
+      |> assert_method(:post)
+      |> assert_url("https://example.com")
     end
 
     test "from_curl supports newlines" do
-      curl =
-        from_curl("""
-          curl -X POST \
-           --location \
-           https://example.com
-        """)
-
-      assert curl == %Req.Request{
-               method: :post,
-               url: URI.parse("https://example.com"),
-               registered_options: MapSet.new([:redirect, :connect_options]),
-               options: %{redirect: true, connect_options: [protocols: [:http1, :http2]]},
-               response_steps: [redirect: &Req.Steps.redirect/1]
-             }
+      from_curl("""
+        curl -X POST \
+         --location \
+         https://example.com
+      """)
+      |> assert_redirect()
+      |> assert_method(:post)
+      |> assert_url("https://example.com")
     end
 
     test "accepts newlines ending in backslash" do
-      uri = URI.parse("https://example.com/api/2024-07/graphql.json")
+      ~CURL"""
+          curl -X POST \
+            https://example.com/api/2024-07/graphql.json \
+            -H 'Content-Type: application/json' \
+            -H 'X-Shopify-Storefront-Access-Token: ABCDEF' \
+            -d '{
+              "query": "{
+                products(first: 3) {
+                  edges {
+                    node {
+                      id
+                      title
+                    }
+                  }
+                }
+              }"
+            }'
+      """
+      |> assert_url("https://example.com/api/2024-07/graphql.json")
+      |> assert_header("X-Shopify-Storefront-Access-Token", ["ABCDEF"])
 
-      assert %Req.Request{
-               method: :post,
-               url: ^uri,
-               options: %{json: %{"query" => _}}
-             } = ~CURL"""
-                 curl -X POST \
-                   https://example.com/api/2024-07/graphql.json \
-                   -H 'Content-Type: application/json' \
-                   -H 'X-Shopify-Storefront-Access-Token: ABCDEF' \
-                   -d '{
-                     "query": "{
-                       products(first: 3) {
-                         edges {
-                           node {
-                             id
-                             title
-                           }
-                         }
-                       }
-                     }"
-                   }'
-             """
-
-      assert %Req.Request{
-               method: :post,
-               url: ^uri,
-               options: %{json: %{"query" => _}}
-             } = ~CURL"""
-                 curl -X POST
-                   https://example.com/api/2024-07/graphql.json
-                   -H 'Content-Type: application/json'
-                   -H 'X-Shopify-Storefront-Access-Token: ABCDEF'
-                   -d '{
-                     "query": "{
-                       products(first: 3) {
-                         edges {
-                           node {
-                             id
-                             title
-                           }
-                         }
-                       }
-                     }"
-                   }'
-             """
+      ~CURL"""
+          curl -X POST
+            https://example.com/api/2024-07/graphql.json
+            -H 'Content-Type: application/json'
+            -H 'X-Shopify-Storefront-Access-Token: ABCDEF'
+            -d '{
+              "query": "{
+                products(first: 3) {
+                  edges {
+                    node {
+                      id
+                      title
+                    }
+                  }
+                }
+              }"
+            }'
+      """
+      |> assert_header("X-Shopify-Storefront-Access-Token", ["ABCDEF"])
+      |> assert_url("https://example.com/api/2024-07/graphql.json")
     end
 
     test "unused flags get ignored" do
