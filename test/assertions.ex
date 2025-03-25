@@ -1,22 +1,12 @@
 defmodule CurlReq.Assertions do
   import ExUnit.Assertions
 
-  def assert_url(%Req.Request{} = req, uri) do
-    expected_uri =
-      cond do
-        is_binary(uri) ->
-          URI.parse(uri)
+  def assert_url(%Req.Request{} = req, uri) when is_binary(uri) do
+    assert_url(req, URI.parse(uri))
+  end
 
-        is_struct(uri, URI) ->
-          uri
-
-        true ->
-          flunk("Expected a string or %URI{} for the second argument, got: #{inspect(uri)}")
-      end
-
-    assert req.url == expected_uri,
-           "Expected request URI #{inspect(req.url)} to equal #{inspect(expected_uri)}"
-
+  def assert_url(%Req.Request{} = req, %URI{} = uri) do
+    assert req.url == uri, "Expected request URI #{inspect(req.url)} to equal #{inspect(uri)}"
     req
   end
 
