@@ -10,33 +10,40 @@ defmodule CurlReq.Assertions do
     req
   end
 
-  def assert_option(%Req.Request{} = req, option, value) do
-    assert Req.Request.fetch_option!(req, option) == value
+  def assert_option!(%Req.Request{} = req, option, value, opts \\ []) do
+    assert Req.Request.fetch_option!(req, option) == value, opts[:error] || []
     req
   end
 
-  def assert_redirect(%Req.Request{} = req) do
-    assert_option(req, :redirect, true)
+  def assert_option(%Req.Request{} = req, option, value, default \\ nil, opts \\ []) do
+    assert Req.Request.get_option(req, option, default) == value, opts[:error] || []
+    req
   end
 
-  def assert_compressed(%Req.Request{} = req) do
-    assert_option(req, :compressed, true)
+  def assert_redirect(%Req.Request{} = req, allowed? \\ true) do
+    assert_option(req, :redirect, allowed?, true, error: "Expected redirect set to #{allowed?}")
+  end
+
+  def assert_compressed(%Req.Request{} = req, allowed? \\ true) do
+    assert_option(req, :compressed, allowed?, true,
+      error: "Expected compressed set to #{allowed?}"
+    )
   end
 
   def assert_form(%Req.Request{} = req, form) do
-    assert_option(req, :form, form)
+    assert_option!(req, :form, form)
   end
 
   def assert_json(%Req.Request{} = req, json) do
-    assert_option(req, :json, json)
+    assert_option!(req, :json, json)
   end
 
   def assert_auth(%Req.Request{} = req, :bearer, token) do
-    assert_option(req, :auth, {:bearer, token})
+    assert_option!(req, :auth, {:bearer, token})
   end
 
   def assert_auth(%Req.Request{} = req, :basic, userinfo) do
-    assert_option(req, :auth, {:basic, userinfo})
+    assert_option!(req, :auth, {:basic, userinfo})
   end
 
   def assert_auth(%Req.Request{} = req, :proxy, userinfo) do

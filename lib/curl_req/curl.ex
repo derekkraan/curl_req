@@ -145,6 +145,8 @@ defmodule CurlReq.Curl do
     %CurlReq.Request{}
     |> CurlReq.Request.put_url(url)
     |> CurlReq.Request.put_encoding(:form)
+    |> CurlReq.Request.put_compression(false)
+    |> CurlReq.Request.put_redirect(false)
     |> add_header(options)
     |> add_body(options)
     |> add_cookie(options)

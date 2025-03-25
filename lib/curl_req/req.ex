@@ -138,6 +138,9 @@ defmodule CurlReq.Req do
       case request.compression do
         :none ->
           req
+          |> Req.Request.register_options([:compressed])
+          |> Req.Request.prepend_request_steps(compressed: &Req.Steps.compressed/1)
+          |> Req.merge(compressed: false)
 
         _ ->
           req
@@ -150,6 +153,9 @@ defmodule CurlReq.Req do
       case request.redirect do
         false ->
           req
+          |> Req.Request.register_options([:redirect])
+          |> Req.Request.prepend_response_steps(redirect: &Req.Steps.redirect/1)
+          |> Req.merge(redirect: false)
 
         _ ->
           req

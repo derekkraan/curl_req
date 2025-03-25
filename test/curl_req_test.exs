@@ -264,6 +264,13 @@ defmodule CurlReqTest do
       |> assert_url("http://example.com/fact")
     end
 
+    test "redirect and compression is false by default" do
+      ~CURL(curl example.com/fact)
+      |> assert_url("http://example.com/fact")
+      |> assert_redirect(false)
+      |> assert_compressed(false)
+    end
+
     test "wrong scheme raises error" do
       assert_raise(
         ArgumentError,
@@ -428,6 +435,9 @@ defmodule CurlReqTest do
 
     test "redirect" do
       ~CURL(curl -L http://example.com)
+      |> assert_redirect()
+
+      ~CURL(curl --location http://example.com)
       |> assert_redirect()
     end
 
