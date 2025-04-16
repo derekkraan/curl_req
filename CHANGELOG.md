@@ -1,10 +1,11 @@
 # Changelog
 
-## 0.101.0
+## 0.100.1
 
 ### Enhancements
 
 - Added `Plug` module to encode/decode from/to plug. Added plug to put in a normal Phoenix pipeline to log requests as cURL commands
+- The library now initializes `%Req.Request{}` with `Req.new/0`.
 
 ## 0.100.0
 
