@@ -39,6 +39,18 @@ jobs:
           elixir-version: ${{ matrix.elixir_version }}
           otp-version: ${{ matrix.otp_version }}
 
+      - name: Cache deps
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: |
+            deps
+            _build
+
+          key: ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ matrix.otp_version }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.elixir_version }}-${{ matrix.otp_version }}-
+
       - run: cp blend/req_0_4.mix.lock mix.lock
         if: ${{ matrix.req_0_4 }}
 
