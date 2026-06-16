@@ -89,11 +89,11 @@ defmodule CurlReq do
 
   ## Examples
 
-      iex> Req.new(url: URI.parse("https://www.example.com"))
+      iex> Req.new(url: URI.parse("https://www.example.com"), compressed: true)
       ...> |> CurlReq.to_curl()
       ~S(curl --compressed -X GET https://www.example.com)
 
-      iex> Req.new(url: URI.parse("https://www.example.com"))
+      iex> Req.new(url: URI.parse("https://www.example.com"), compressed: true)
       ...> |> CurlReq.to_curl(flags: :long, flavor: :req)
       ~S(curl --header "accept-encoding: gzip" --user-agent "req/#{@req_version}" --request GET https://www.example.com)
 
