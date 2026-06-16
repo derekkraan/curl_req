@@ -26,7 +26,7 @@ defmodule CurlReq.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:req, "~> 0.4.0 or ~> 0.5.0"},
+      {:req, "~> 0.4.0 or ~> 0.5.0 or ~> 0.6.0"},
       {:jason, "~> 1.4"},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:blend, "~> 0.4.1", only: :dev},

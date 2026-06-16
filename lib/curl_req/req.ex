@@ -165,8 +165,8 @@ defmodule CurlReq.Req do
       end
 
     req =
-      for {key, values} <- request.headers, reduce: req do
-        req -> Req.Request.put_header(req, key, values)
+      for {key, values} <- request.headers, value <- List.wrap(values), reduce: req do
+        req -> Req.Request.put_header(req, key, value)
       end
 
     cookies =

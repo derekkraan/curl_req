@@ -9,14 +9,14 @@ defmodule CurlReqTest do
   describe "inspect" do
     test "without label" do
       assert capture_io(fn ->
-               Req.new(url: "/without_label", base_url: "https://example.com/")
+               Req.new(url: "/without_label", base_url: "https://example.com/", compressed: true)
                |> CurlReq.inspect()
              end) === "curl --compressed -X GET https://example.com/without_label\n"
     end
 
     test "with label" do
       assert capture_io(:stdio, fn ->
-               Req.new(url: "/with_label", base_url: "https://example.com/")
+               Req.new(url: "/with_label", base_url: "https://example.com/", compressed: true)
                |> CurlReq.inspect(label: "MY REQ")
              end) === "MY REQ: curl --compressed -X GET https://example.com/with_label\n"
     end
@@ -25,30 +25,34 @@ defmodule CurlReqTest do
   describe "to_curl" do
     test "works with base URL" do
       assert "curl --compressed -X GET https://example.com/fact" ==
-               Req.new(url: "/fact", base_url: "https://example.com/")
+               Req.new(url: "/fact", base_url: "https://example.com/", compressed: true)
                |> CurlReq.to_curl()
     end
 
     test "escape url when needed" do
       assert ~s(curl --compressed -X GET "https://example.com/fact?") ==
-               Req.new(url: "/fact?", base_url: "https://example.com/")
+               Req.new(url: "/fact?", base_url: "https://example.com/", compressed: true)
                |> CurlReq.to_curl()
     end
 
     test "cookies get extracted from header" do
-      assert Req.new(url: "http://example.com", headers: %{"cookie" => ["name1=value1"]})
+      assert Req.new(
+               url: "http://example.com",
+               headers: %{"cookie" => ["name1=value1"]},
+               compressed: true
+             )
              |> CurlReq.to_curl() ==
                ~s|curl --compressed -b "name1=value1" -X GET http://example.com|
     end
 
     test "redirect flag gets set" do
-      assert Req.new(url: "http://example.com", redirect: true)
+      assert Req.new(url: "http://example.com", redirect: true, compressed: true)
              |> CurlReq.to_curl() ==
                "curl --compressed -L -X GET http://example.com"
     end
 
     test "head method flag gets set" do
-      assert Req.new(url: "http://example.com", method: :head)
+      assert Req.new(url: "http://example.com", method: :head, compressed: true)
              |> CurlReq.to_curl() ==
                "curl --compressed -I http://example.com"
     end
@@ -58,7 +62,8 @@ defmodule CurlReqTest do
                url: "http://example.com",
                method: :head,
                redirect: true,
-               headers: %{"cookie" => ["name1=value1"], "content-type" => ["application/json"]}
+               headers: %{"cookie" => ["name1=value1"], "content-type" => ["application/json"]},
+               compressed: true
              )
              |> CurlReq.to_curl(flags: :long) ==
                ~S|curl --compressed --cookie "name1=value1" --location --head http://example.com|
@@ -67,7 +72,11 @@ defmodule CurlReqTest do
     end
 
     test "formdata flags get set with correct headers and body" do
-      assert Req.new(url: "http://example.com", form: [key1: "value1", key2: "value2"])
+      assert Req.new(
+               url: "http://example.com",
+               form: [key1: "value1", key2: "value2"],
+               compressed: true
+             )
              |> CurlReq.to_curl() ==
                ~S|curl --compressed -H "content-type: application/x-www-form-urlencoded" -d "key1=value1&key2=value2" -X GET http://example.com|
     end
@@ -78,7 +87,8 @@ defmodule CurlReqTest do
                  method: :post,
                  url: "/fact",
                  base_url: "https://example.com",
-                 body: ["h" | ["e" | ["llo"]]]
+                 body: ["h" | ["e" | ["llo"]]],
+                 compressed: true
                )
                |> CurlReq.to_curl()
     end
@@ -91,19 +101,27 @@ defmodule CurlReqTest do
 
     test "header" do
       assert ~s(curl --compressed -H "my-header: foo" -X GET https://example.com) ==
-               Req.new(url: "https://example.com", headers: %{"my-header" => ["foo"]})
+               Req.new(
+                 url: "https://example.com",
+                 headers: %{"my-header" => ["foo"]},
+                 compressed: true
+               )
                |> CurlReq.to_curl()
     end
 
     test "parameterized header" do
       assert ~s(curl --compressed -H "my-header: foo, bar=baz" -X GET https://example.com) ==
-               Req.new(url: "https://example.com", headers: %{"my-header" => ["foo", "bar=baz"]})
+               Req.new(
+                 url: "https://example.com",
+                 headers: %{"my-header" => ["foo", "bar=baz"]},
+                 compressed: true
+               )
                |> CurlReq.to_curl()
     end
 
     test "req flavor with explicit headers" do
       assert ~s|curl -H "accept-encoding: gzip" -A "req/#{req_version()}" -X GET https://example.com| ==
-               Req.new(url: "https://example.com")
+               Req.new(url: "https://example.com", compressed: true)
                |> CurlReq.to_curl(flavor: :req)
     end
 
@@ -111,7 +129,8 @@ defmodule CurlReqTest do
       assert ~S(curl --compressed -x http://my.proxy.com -X GET https://example.com) ==
                Req.new(
                  url: "https://example.com",
-                 connect_options: [proxy: {:http, "my.proxy.com", 80, []}]
+                 connect_options: [proxy: {:http, "my.proxy.com", 80, []}],
+                 compressed: true
                )
                |> CurlReq.to_curl()
     end
@@ -125,20 +144,21 @@ defmodule CurlReqTest do
                    proxy_headers: [
                      {"proxy-authorization", "Basic " <> Base.encode64("foo:bar")}
                    ]
-                 ]
+                 ],
+                 compressed: true
                )
                |> CurlReq.to_curl()
     end
 
     test "basic auth option" do
       assert "curl --compressed -u user:pass -X GET https://example.com" ==
-               Req.new(url: "https://example.com", auth: {:basic, "user:pass"})
+               Req.new(url: "https://example.com", auth: {:basic, "user:pass"}, compressed: true)
                |> CurlReq.to_curl()
     end
 
     test "bearer auth option" do
       assert ~S(curl --compressed -H "authorization: Bearer foo123bar" -X GET https://example.com) ==
-               Req.new(url: "https://example.com", auth: {:bearer, "foo123bar"})
+               Req.new(url: "https://example.com", auth: {:bearer, "foo123bar"}, compressed: true)
                |> CurlReq.to_curl()
     end
 
@@ -156,7 +176,7 @@ defmodule CurlReqTest do
       System.put_env("NETRC", netrc_path)
 
       assert "curl --compressed -n -X GET https://example.com" ==
-               Req.new(url: "https://example.com", auth: :netrc)
+               Req.new(url: "https://example.com", auth: :netrc, compressed: true)
                |> CurlReq.to_curl()
     end
 
@@ -173,7 +193,7 @@ defmodule CurlReqTest do
       File.write(netrc_path, credentials)
 
       assert ~s(curl --compressed --netrc-file "#{netrc_path}" -X GET https://example.com) ==
-               Req.new(url: "https://example.com", auth: {:netrc, netrc_path})
+               Req.new(url: "https://example.com", auth: {:netrc, netrc_path}, compressed: true)
                |> CurlReq.to_curl()
     end
 
@@ -222,14 +242,16 @@ defmodule CurlReqTest do
       assert ~s(curl --compressed -A "some_user_agent/0.1.0" -X GET http://example.com) ==
                Req.new(
                  url: "http://example.com",
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
+                 compressed: true
                )
                |> CurlReq.to_curl()
 
       assert ~s(curl --compressed --user-agent "some_user_agent/0.1.0" --request GET http://example.com) ==
                Req.new(
                  url: "http://example.com",
-                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]}
+                 headers: %{"user-agent" => ["some_user_agent/0.1.0"]},
+                 compressed: true
                )
                |> CurlReq.to_curl(flags: :long)
     end
@@ -238,21 +260,24 @@ defmodule CurlReqTest do
       assert ~s(curl --compressed -0 --http1.1 -X GET http://example.com) ==
                Req.new(
                  url: "http://example.com",
-                 connect_options: [protocols: [:http1]]
+                 connect_options: [protocols: [:http1]],
+                 compressed: true
                )
                |> CurlReq.to_curl()
 
       assert ~s(curl --compressed -X GET http://example.com) ==
                Req.new(
                  url: "http://example.com",
-                 connect_options: [protocols: [:http2]]
+                 connect_options: [protocols: [:http2]],
+                 compressed: true
                )
                |> CurlReq.to_curl()
 
       assert ~s(curl --compressed -X GET http://example.com) ==
                Req.new(
                  url: "http://example.com",
-                 connect_options: [protocols: [:http1, :http2]]
+                 connect_options: [protocols: [:http1, :http2]],
+                 compressed: true
                )
                |> CurlReq.to_curl()
     end
